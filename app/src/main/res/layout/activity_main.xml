@@ -12,10 +12,10 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent">
 
-        <!-- EDITOR MEJORADO ESTILO CALCULADORA CIENTÍFICA -->
+        <!-- EDITOR MATHLIVE INTERACTIVO -->
         <androidx.cardview.widget.CardView
             android:layout_width="match_parent"
-            android:layout_height="180dp"
+            android:layout_height="200dp"
             android:layout_marginBottom="12dp"
             app:cardCornerRadius="12dp"
             app:cardElevation="4dp"
@@ -25,22 +25,42 @@
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:orientation="vertical"
-                android:padding="12dp">
+                android:padding="8dp">
 
                 <!-- Etiqueta del campo activo -->
-                <TextView
-                    android:id="@+id/tvFieldLabel"
-                    android:layout_width="wrap_content"
+                <LinearLayout
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="EDO:"
-                    android:textSize="12sp"
-                    android:textColor="#1976D2"
-                    android:textStyle="bold"
-                    android:layout_marginBottom="4dp"/>
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:layout_marginBottom="4dp">
 
-                <!-- Vista previa LaTeX GRANDE -->
+                    <TextView
+                        android:id="@+id/tvFieldLabel"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="EDO:"
+                        android:textSize="12sp"
+                        android:textColor="#1976D2"
+                        android:textStyle="bold"/>
+
+                    <Button
+                        android:id="@+id/btnPvi"
+                        android:layout_width="wrap_content"
+                        android:layout_height="32dp"
+                        android:text="PVI"
+                        android:textSize="11sp"
+                        android:paddingStart="12dp"
+                        android:paddingEnd="12dp"
+                        android:minWidth="0dp"
+                        style="@style/Widget.Material3.Button.TonalButton"/>
+
+                </LinearLayout>
+
+                <!-- Editor MathLive (WebView) -->
                 <WebView
-                    android:id="@+id/wvPreviewTop"
+                    android:id="@+id/wvMathLive"
                     android:layout_width="match_parent"
                     android:layout_height="0dp"
                     android:layout_weight="1"
@@ -50,7 +70,7 @@
 
         </androidx.cardview.widget.CardView>
 
-        <!-- Inputs invisibles (solo backing store) -->
+        <!-- Inputs invisibles (solo backing store para valores) -->
         <EditText
             android:id="@+id/etEquation"
             android:layout_width="match_parent"
@@ -60,7 +80,6 @@
             android:importantForAutofill="no"
             android:hint="EDO"/>
 
-        <!-- PVI separado en 2 valores -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="1dp"
@@ -86,7 +105,8 @@
                 android:hint="y0"/>
         </LinearLayout>
 
-        <!-- TECLADO MATEMÁTICO -->
+        <!-- TECLADO MATEMÁTICO (MathLive tiene su propio teclado virtual) -->
+        <!-- Lo dejamos para botones especiales de EDO -->
         <com.google.android.material.tabs.TabLayout
             android:id="@+id/tabKeyboard"
             android:layout_width="match_parent"
@@ -102,7 +122,7 @@
         <androidx.viewpager2.widget.ViewPager2
             android:id="@+id/vpKeyboard"
             android:layout_width="match_parent"
-            android:layout_height="240dp"
+            android:layout_height="180dp"
             android:background="#FFFFFF"/>
 
         <!-- BOTONES DE ACCIÓN -->
@@ -113,37 +133,27 @@
             android:layout_marginTop="8dp">
 
             <Button
-                android:id="@+id/btnPvi"
-                android:layout_width="0dp"
-                android:layout_height="48dp"
-                android:layout_weight="1"
-                android:text="PVI"
-                android:textSize="14sp"
-                android:layout_marginEnd="4dp"
-                app:cornerRadius="8dp"
-                style="@style/Widget.Material3.Button.TonalButton"/>
-
-            <Button
                 android:id="@+id/btnSolve"
                 android:layout_width="0dp"
                 android:layout_height="48dp"
                 android:layout_weight="2"
                 android:text="Resolver"
                 android:textSize="14sp"
-                android:layout_marginStart="4dp"
+                android:layout_marginEnd="4dp"
                 app:cornerRadius="8dp"/>
 
-        </LinearLayout>
+            <Button
+                android:id="@+id/btnToggleSteps"
+                android:layout_width="0dp"
+                android:layout_height="48dp"
+                android:layout_weight="1"
+                android:text="Pasos"
+                android:textSize="14sp"
+                android:layout_marginStart="4dp"
+                app:cornerRadius="8dp"
+                style="@style/Widget.Material3.Button.OutlinedButton"/>
 
-        <Button
-            android:id="@+id/btnToggleSteps"
-            android:layout_width="match_parent"
-            android:layout_height="48dp"
-            android:text="Ver pasos"
-            android:textSize="14sp"
-            android:layout_marginTop="8dp"
-            app:cornerRadius="8dp"
-            style="@style/Widget.Material3.Button.OutlinedButton"/>
+        </LinearLayout>
 
         <!-- RESULTADO -->
         <androidx.cardview.widget.CardView

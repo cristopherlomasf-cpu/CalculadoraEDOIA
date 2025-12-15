@@ -88,8 +88,18 @@ class CameraOcrActivity : AppCompatActivity() {
 
         cameraExecutor = Executors.newSingleThreadExecutor()
 
-        // Por defecto usar Mathpix si hay credenciales
-        switchMathpix.isChecked = BuildConfig.MATHPIX_APP_ID.isNotBlank()
+        // FORZAR Mathpix por defecto (mejor para matemáticas)
+        switchMathpix.isChecked = true
+        switchMathpix.isEnabled = BuildConfig.MATHPIX_APP_ID.isNotBlank()
+
+        // Mostrar advertencia si no hay credenciales Mathpix
+        if (BuildConfig.MATHPIX_APP_ID.isBlank()) {
+            Toast.makeText(
+                this,
+                "Mathpix no configurado. Usando ML Kit (menos preciso para ecuaciones)",
+                Toast.LENGTH_LONG
+            ).show()
+        }
 
         btnCapture.setOnClickListener {
             takePhoto()
@@ -103,7 +113,14 @@ class CameraOcrActivity : AppCompatActivity() {
             openGallery()
         }
 
-        checkCameraPermission()
+        // Verificar si viene de URI de imagen directamente
+        val imageUriString = intent.getStringExtra("image_uri")
+        if (!imageUriString.isNullOrBlank()) {
+            val uri = Uri.parse(imageUriString)
+            processImageFromGallery(uri)
+        } else {
+            checkCameraPermission()
+        }
     }
 
     private fun checkCameraPermission() {
@@ -133,7 +150,7 @@ class CameraOcrActivity : AppCompatActivity() {
                 }
 
             imageCapture = ImageCapture.Builder()
-                .setCaptureMode(ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY)
+                .setCaptureMode(ImageCapture.CAPTURE_MODE_MAXIMIZE_QUALITY) // Cambiar a QUALITY
                 .build()
 
             val cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
@@ -206,12 +223,36 @@ class CameraOcrActivity : AppCompatActivity() {
     private fun processImage(bitmap: Bitmap) {
         showProcessing(true)
         
+        // Pre-procesar imagen para mejorar detección
+        val processedBitmap = preprocessImage(bitmap)
+        
         if (switchMathpix.isChecked && BuildConfig.MATHPIX_APP_ID.isNotBlank()) {
-            tvProcessing.text = "Procesando con Mathpix..."
-            processMathpix(bitmap)
+            tvProcessing.text = "🔍 Analizando ecuación con Mathpix..."
+            processMathpix(processedBitmap)
         } else {
-            tvProcessing.text = "Procesando con ML Kit..."
-            processMLKit(bitmap)
+            tvProcessing.text = "🔍 Analizando texto con ML Kit..."
+            processMLKit(processedBitmap)
+        }
+    }
+
+    private fun preprocessImage(bitmap: Bitmap): Bitmap {
+        // Redimensionar si es muy grande (mejora velocidad)
+        val maxDimension = 2048
+        val scale = minOf(
+            maxDimension.toFloat() / bitmap.width,
+            maxDimension.toFloat() / bitmap.height,
+            1f
+        )
+        
+        return if (scale < 1f) {
+            Bitmap.createScaledBitmap(
+                bitmap,
+                (bitmap.width * scale).toInt(),
+                (bitmap.height * scale).toInt(),
+                true
+            )
+        } else {
+            bitmap
         }
     }
 
@@ -219,7 +260,14 @@ class CameraOcrActivity : AppCompatActivity() {
         CoroutineScope(Dispatchers.Main).launch {
             try {
                 val base64 = bitmapToBase64(bitmap)
-                val request = MathpixRequest(src = "data:image/jpeg;base64,$base64")
+                val request = MathpixRequest(
+                    src = "data:image/jpeg;base64,$base64",
+                    formats = listOf("latex_styled", "text"),
+                    data_options = mapOf(
+                        "include_asciimath" to false,
+                        "include_latex" to true
+                    )
+                )
                 
                 val response = withContext(Dispatchers.IO) {
                     mathpixApi.recognizeImage(request)
@@ -227,22 +275,20 @@ class CameraOcrActivity : AppCompatActivity() {
 
                 if (response.error != null) {
                     Log.e("Mathpix", "Error: ${response.error}")
-                    // Fallback a ML Kit
-                    tvProcessing.text = "Mathpix fallo, usando ML Kit..."
-                    processMLKit(bitmap)
+                    showError("❌ Mathpix error: ${response.error}\n\nIntenta con mejor iluminación")
                 } else {
                     val latex = response.latex_styled ?: response.text ?: ""
+                    Log.d("Mathpix", "Detected: $latex")
+                    
                     if (latex.isBlank()) {
-                        showError("No se detecto ecuacion")
+                        showError("❌ No se detectó ecuación\n\nConsejos:\n• Mejor iluminación\n• Enfoque nítido\n• Letra clara")
                     } else {
                         returnResult(latex)
                     }
                 }
             } catch (e: Exception) {
                 Log.e("Mathpix", "Exception", e)
-                // Fallback a ML Kit
-                tvProcessing.text = "Error Mathpix, usando ML Kit..."
-                processMLKit(bitmap)
+                showError("❌ Error de conexión con Mathpix\n\n${e.message}")
             }
         }
     }
@@ -256,22 +302,23 @@ class CameraOcrActivity : AppCompatActivity() {
                 Log.d("MLKit", "Text: $text")
 
                 if (text.isBlank()) {
-                    showError("No se detecto texto")
+                    showError("❌ No se detectó texto\n\nNota: ML Kit no es ideal para ecuaciones.\nActiva Mathpix para mejores resultados.")
                     return@addOnSuccessListener
                 }
 
                 val latex = convertToLatex(text)
+                Log.d("MLKit", "Converted: $latex")
                 returnResult(latex)
             }
             .addOnFailureListener { e ->
                 Log.e("MLKit", "Failed", e)
-                showError("Error: ${e.message}")
+                showError("❌ Error ML Kit: ${e.message}")
             }
     }
 
     private fun bitmapToBase64(bitmap: Bitmap): String {
-        // Comprimir imagen para Mathpix
-        val maxSize = 1024
+        // Comprimir imagen para Mathpix (max 4MB)
+        val maxSize = 1600
         val ratio = maxSize.toFloat() / maxOf(bitmap.width, bitmap.height)
         val resized = if (ratio < 1) {
             Bitmap.createScaledBitmap(
@@ -283,7 +330,7 @@ class CameraOcrActivity : AppCompatActivity() {
         } else bitmap
 
         val baos = ByteArrayOutputStream()
-        resized.compress(Bitmap.CompressFormat.JPEG, 90, baos)
+        resized.compress(Bitmap.CompressFormat.JPEG, 92, baos)
         return Base64.encodeToString(baos.toByteArray(), Base64.NO_WRAP)
     }
 
@@ -291,8 +338,8 @@ class CameraOcrActivity : AppCompatActivity() {
         var latex = text.trim()
             .replace("\n", " ")
             .replace("  ", " ")
-            .replace("'", "'")
             .replace("’", "'")
+            .replace("‘", "'")
             .replace(" x ", "x")
             .replace(" y ", "y")
             .replace(" = ", "=")

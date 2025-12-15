@@ -346,40 +346,41 @@ class MainActivity : AppCompatActivity(), KeyboardPageFragment.KeyClickListener 
 
         setResultLatex("\\[\\text{Resolviendo...}\\]")
 
-        // Pedir dos secciones separadas para poder toggle sin otra llamada
+        // Prompt mejorado y simplificado
         val prompt = buildString {
-            appendLine("Devuelve SOLO LaTeX para MathJax. Prohibido Markdown y texto fuera de \\[...\\].")
-            appendLine("REGLAS:")
-            appendLine("1) La primera parte (antes del delimitador) es SOLO SOLUCION e incluye SOLO el TIPO (no incluyas método aquí).")
-            appendLine("2) Después del delimitador van SOLO los PASOS e incluye en la primera línea el METODO.")
+            appendLine("Resuelve esta EDO y devuelve SOLO LaTeX para MathJax.")
             appendLine("")
-            appendLine("DELIMITADOR OBLIGATORIO (exacto, en una línea sola):")
+            appendLine("FORMATO OBLIGATORIO:")
+            appendLine("Parte 1 - SOLUCIÓN:")
+            appendLine("\\[\\textbf{SOLUCION}\\]")
+            appendLine("\\[\\textbf{TIPO:}\\ \\text{tipo de EDO}\\]")
+            appendLine("\\[\\text{Solución final}\\]")
+            appendLine("")
             appendLine("<<<PASOS>>>")
             appendLine("")
-            appendLine("FORMATO EXACTO:")
-            appendLine("Antes del delimitador:")
-            appendLine("\\[\\textbf{SOLUCION}\\]")
-            appendLine("\\[\\textbf{TIPO:}\\ \\text{Indica: orden (1er/2do/...), lineal o no lineal, homogénea o no, autónoma o no, y si es separable/exacta/Bernoulli/etc. si aplica.}\\]")
-            appendLine("\\[ ... \\]  (resultado final)")
-            appendLine("")
-            appendLine("Después del delimitador:")
+            appendLine("Parte 2 - PASOS:")
             appendLine("\\[\\textbf{PASOS}\\]")
-            appendLine("\\[\\textbf{METODO:}\\ \\text{...}\\]")
-            appendLine("Luego 3 a 10 líneas \\[\\text{...}\\] con fórmulas en \\( ... \\).")
+            appendLine("\\[\\textbf{METODO:}\\ \\text{método usado}\\]")
+            appendLine("\\[\\text{Paso 1: Explicación breve}\\ \\Rightarrow\\ \\text{ecuación}\\]")
+            appendLine("\\[\\text{Paso 2: Explicación breve}\\ \\Rightarrow\\ \\text{ecuación}\\]")
+            appendLine("\\[\\text{Paso 3: Explicación breve}\\ \\Rightarrow\\ \\text{ecuación}\\]")
+            appendLine("(continúa hasta resolver completamente)")
+            appendLine("")
+            appendLine("REGLAS:")
+            appendLine("- Cada paso debe estar en una sola línea \\[...\\]")
+            appendLine("- Mantén las explicaciones cortas (máximo 10 palabras)")
+            appendLine("- Si no puedes resolver, deja en función de C")
             appendLine("")
             appendLine("EDO: $equation")
             if (hasPvi) appendLine("PVI: x0=$x0, y0=$y0")
         }
-
-
-
 
         CoroutineScope(Dispatchers.Main).launch {
             try {
                 val resp = withContext(Dispatchers.IO) {
                     api.chat(
                         PplxRequest(
-                            model = "sonar-reasoning",
+                            model = "sonar-pro",
                             messages = listOf(
                                 PplxMessage("system", "Devuelve únicamente LaTeX válido para MathJax."),
                                 PplxMessage("user", prompt)

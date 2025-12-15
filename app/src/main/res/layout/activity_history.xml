@@ -15,11 +15,19 @@
         android:elevation="4dp"
         app:title="Historial"
         app:titleTextColor="@android:color/white"
-        app:navigationIcon="@android:drawable/ic_menu_close_clear_cancel" />
+        app:navigationIcon="@drawable/ic_arrow_back" />
 
-    <!-- Empty state -->
+    <!-- RecyclerView -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/recyclerHistory"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:padding="8dp"
+        android:clipToPadding="false" />
+
+    <!-- Empty State -->
     <LinearLayout
-        android:id="@+id/emptyState"
+        android:id="@+id/emptyView"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:orientation="vertical"
@@ -30,15 +38,16 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="📚"
+            android:text="📝"
             android:textSize="64sp"
             android:layout_marginBottom="16dp" />
 
         <TextView
+            android:id="@+id/tvEmpty"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="No hay historial"
-            android:textSize="18sp"
+            android:text="Sin historial"
+            android:textSize="20sp"
             android:textStyle="bold"
             android:textColor="?android:attr/textColorPrimary"
             android:layout_marginBottom="8dp" />
@@ -46,18 +55,11 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Resuelve una ecuacion para ver el historial aqui"
+            android:text="Resuelve ecuaciones para verlas aqui"
             android:textSize="14sp"
             android:textColor="?android:attr/textColorSecondary"
             android:gravity="center" />
-    </LinearLayout>
 
-    <!-- RecyclerView -->
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/recyclerView"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:clipToPadding="false"
-        android:padding="8dp" />
+    </LinearLayout>
 
 </LinearLayout>

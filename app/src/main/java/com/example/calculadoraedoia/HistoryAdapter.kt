@@ -14,8 +14,9 @@ import java.util.*
 
 class HistoryAdapter(
     private val onItemClick: (EquationHistory) -> Unit,
+    private val onShareClick: (EquationHistory) -> Unit,
     private val onDeleteClick: (EquationHistory) -> Unit
-) : ListAdapter<EquationHistory, HistoryAdapter.HistoryViewHolder>(DiffCallback()) {
+) : ListAdapter<EquationHistory, HistoryAdapter.HistoryViewHolder>(HistoryDiffCallback()) {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): HistoryViewHolder {
         val view = LayoutInflater.from(parent.context)
@@ -29,62 +30,45 @@ class HistoryAdapter(
 
     inner class HistoryViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         private val tvEquation: TextView = itemView.findViewById(R.id.tvEquation)
-        private val tvSolution: TextView = itemView.findViewById(R.id.tvSolution)
-        private val tvTimestamp: TextView = itemView.findViewById(R.id.tvTimestamp)
+        private val tvPvi: TextView = itemView.findViewById(R.id.tvPvi)
+        private val tvSolutionPreview: TextView = itemView.findViewById(R.id.tvSolutionPreview)
+        private val tvDate: TextView = itemView.findViewById(R.id.tvDate)
+        private val btnShare: ImageButton = itemView.findViewById(R.id.btnShare)
         private val btnDelete: ImageButton = itemView.findViewById(R.id.btnDelete)
 
         fun bind(history: EquationHistory) {
-            // Display equation
-            val eqDisplay = if (history.x0 != null || history.y0 != null) {
-                "${history.equation} | PVI: x0=${history.x0}, y0=${history.y0}"
+            // Ecuacion
+            tvEquation.text = history.equation
+
+            // PVI
+            val hasPvi = !history.x0.isNullOrBlank() || !history.y0.isNullOrBlank()
+            if (hasPvi) {
+                tvPvi.visibility = View.VISIBLE
+                tvPvi.text = "PVI: x0=${history.x0 ?: ""}, y0=${history.y0 ?: ""}"
             } else {
-                history.equation
+                tvPvi.visibility = View.GONE
             }
-            tvEquation.text = eqDisplay
 
-            // Extract solution preview
-            val solutionPreview = extractSolutionPreview(history.solution)
-            tvSolution.text = solutionPreview
+            // Preview de solucion (primeras 80 caracteres)
+            val preview = history.solution.take(80)
+            tvSolutionPreview.text = if (history.solution.length > 80) {
+                "$preview..."
+            } else {
+                preview
+            }
 
-            // Format timestamp
-            tvTimestamp.text = formatTimestamp(history.timestamp)
+            // Fecha
+            val dateFormat = SimpleDateFormat("dd MMM yyyy, HH:mm", Locale.getDefault())
+            tvDate.text = dateFormat.format(Date(history.timestamp))
 
             // Click handlers
-            itemView.setOnClickListener {
-                onItemClick(history)
-            }
-
-            btnDelete.setOnClickListener {
-                onDeleteClick(history)
-            }
-        }
-
-        private fun extractSolutionPreview(solution: String): String {
-            // Extract first line or y = ...
-            val lines = solution.split("\n")
-            for (line in lines) {
-                if (line.contains("y =") || line.contains("y=")) {
-                    return line.replace("\\[", "").replace("\\]", "").take(80)
-                }
-            }
-            return "Ver solucion completa"
-        }
-
-        private fun formatTimestamp(timestamp: Long): String {
-            val now = System.currentTimeMillis()
-            val diff = now - timestamp
-
-            return when {
-                diff < 60_000 -> "Hace un momento"
-                diff < 3600_000 -> "Hace ${diff / 60_000} minutos"
-                diff < 86400_000 -> "Hace ${diff / 3600_000} horas"
-                diff < 604800_000 -> "Hace ${diff / 86400_000} dias"
-                else -> SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(Date(timestamp))
-            }
+            itemView.setOnClickListener { onItemClick(history) }
+            btnShare.setOnClickListener { onShareClick(history) }
+            btnDelete.setOnClickListener { onDeleteClick(history) }
         }
     }
 
-    private class DiffCallback : DiffUtil.ItemCallback<EquationHistory>() {
+    class HistoryDiffCallback : DiffUtil.ItemCallback<EquationHistory>() {
         override fun areItemsTheSame(oldItem: EquationHistory, newItem: EquationHistory): Boolean {
             return oldItem.id == newItem.id
         }

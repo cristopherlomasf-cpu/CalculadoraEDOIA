@@ -5,13 +5,11 @@
     android:layout_height="match_parent"
     android:background="#000000">
 
-    <!-- Vista previa de la camara -->
     <androidx.camera.view.PreviewView
         android:id="@+id/previewView"
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
 
-    <!-- Overlay con guias y controles -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
@@ -19,12 +17,12 @@
         android:gravity="bottom"
         android:padding="16dp">
 
-        <!-- Guia visual (marco para centrar ecuacion) -->
         <View
             android:layout_width="match_parent"
             android:layout_height="0dp"
             android:layout_weight="1" />
 
+        <!-- Guia visual -->
         <androidx.cardview.widget.CardView
             android:layout_width="match_parent"
             android:layout_height="200dp"
@@ -32,11 +30,6 @@
             app:cardCornerRadius="12dp"
             app:cardBackgroundColor="#00000000"
             app:cardElevation="0dp">
-
-            <View
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:background="@android:color/transparent" />
 
             <View
                 android:layout_width="match_parent"
@@ -66,7 +59,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_gravity="center"
-                android:text="Centra la ecuacion aqui"
+                android:text="Centra la ecuacion"
                 android:textColor="#FFFFFF"
                 android:textSize="16sp"
                 android:background="#80000000"
@@ -79,6 +72,37 @@
             android:layout_height="0dp"
             android:layout_weight="1" />
 
+        <!-- Switch Mathpix -->
+        <androidx.cardview.widget.CardView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginBottom="16dp"
+            app:cardCornerRadius="20dp"
+            app:cardBackgroundColor="#CC000000">
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:padding="12dp"
+                android:gravity="center_vertical">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Mathpix PRO"
+                    android:textColor="#FFFFFF"
+                    android:textSize="14sp"
+                    android:layout_marginEnd="8dp" />
+
+                <Switch
+                    android:id="@+id/switchMathpix"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content" />
+            </LinearLayout>
+        </androidx.cardview.widget.CardView>
+
         <!-- Controles -->
         <LinearLayout
             android:layout_width="match_parent"
@@ -87,7 +111,6 @@
             android:gravity="center"
             android:paddingBottom="24dp">
 
-            <!-- Boton cancelar -->
             <Button
                 android:id="@+id/btnCancel"
                 android:layout_width="wrap_content"
@@ -97,7 +120,6 @@
                 android:layout_marginEnd="16dp"
                 style="@style/Widget.Material3.Button.OutlinedButton" />
 
-            <!-- Boton capturar -->
             <com.google.android.material.floatingactionbutton.FloatingActionButton
                 android:id="@+id/btnCapture"
                 android:layout_width="wrap_content"
@@ -107,7 +129,6 @@
                 app:tint="#FFFFFF"
                 app:fabSize="normal" />
 
-            <!-- Boton galeria -->
             <Button
                 android:id="@+id/btnGallery"
                 android:layout_width="wrap_content"
@@ -119,7 +140,7 @@
         </LinearLayout>
     </LinearLayout>
 
-    <!-- Indicador de procesamiento -->
+    <!-- Indicador procesamiento -->
     <androidx.cardview.widget.CardView
         android:id="@+id/processingCard"
         android:layout_width="match_parent"
@@ -146,7 +167,7 @@
                 android:id="@+id/tvProcessing"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Procesando imagen..."
+                android:text="Procesando..."
                 android:textSize="16sp"
                 android:textColor="#212121" />
         </LinearLayout>

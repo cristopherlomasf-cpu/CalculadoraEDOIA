@@ -6,7 +6,7 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface EquationDao {
     
-    @Query("SELECT * FROM equation_history ORDER BY timestamp DESC LIMIT 50")
+    @Query("SELECT * FROM equation_history ORDER BY timestamp DESC LIMIT 20")
     fun getAllHistory(): Flow<List<EquationHistory>>
     
     @Query("SELECT * FROM equation_history WHERE id = :id")
@@ -26,4 +26,14 @@ interface EquationDao {
     
     @Query("SELECT COUNT(*) FROM equation_history")
     suspend fun getCount(): Int
+    
+    @Query("""
+        DELETE FROM equation_history 
+        WHERE id NOT IN (
+            SELECT id FROM equation_history 
+            ORDER BY timestamp DESC 
+            LIMIT 20
+        )
+    """)
+    suspend fun deleteOldHistory()
 }

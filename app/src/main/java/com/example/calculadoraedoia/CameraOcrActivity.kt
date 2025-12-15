@@ -4,13 +4,16 @@ import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.graphics.Matrix
 import android.net.Uri
 import android.os.Bundle
 import android.provider.MediaStore
+import android.util.Base64
 import android.util.Log
 import android.view.View
 import android.widget.Button
+import android.widget.Switch
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
@@ -24,6 +27,11 @@ import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.text.TextRecognition
 import com.google.mlkit.vision.text.latin.TextRecognizerOptions
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import java.io.ByteArrayOutputStream
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 
@@ -33,13 +41,17 @@ class CameraOcrActivity : AppCompatActivity() {
     private lateinit var btnCapture: FloatingActionButton
     private lateinit var btnCancel: Button
     private lateinit var btnGallery: Button
+    private lateinit var switchMathpix: Switch
     private lateinit var processingCard: CardView
     private lateinit var tvProcessing: TextView
 
     private var imageCapture: ImageCapture? = null
     private lateinit var cameraExecutor: ExecutorService
 
-    private val recognizer = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)
+    private val mlKitRecognizer = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)
+    private val mathpixApi by lazy {
+        MathpixClient.create(BuildConfig.MATHPIX_APP_ID, BuildConfig.MATHPIX_APP_KEY)
+    }
 
     private val requestPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
@@ -70,10 +82,14 @@ class CameraOcrActivity : AppCompatActivity() {
         btnCapture = findViewById(R.id.btnCapture)
         btnCancel = findViewById(R.id.btnCancel)
         btnGallery = findViewById(R.id.btnGallery)
+        switchMathpix = findViewById(R.id.switchMathpix)
         processingCard = findViewById(R.id.processingCard)
         tvProcessing = findViewById(R.id.tvProcessing)
 
         cameraExecutor = Executors.newSingleThreadExecutor()
+
+        // Por defecto usar Mathpix si hay credenciales
+        switchMathpix.isChecked = BuildConfig.MATHPIX_APP_ID.isNotBlank()
 
         btnCapture.setOnClickListener {
             takePhoto()
@@ -165,9 +181,8 @@ class CameraOcrActivity : AppCompatActivity() {
         val buffer = imageProxy.planes[0].buffer
         val bytes = ByteArray(buffer.remaining())
         buffer.get(bytes)
-        val bitmap = android.graphics.BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
+        val bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.size) ?: return null
         
-        // Rotar si es necesario
         val matrix = Matrix()
         matrix.postRotate(imageProxy.imageInfo.rotationDegrees.toFloat())
         return Bitmap.createBitmap(bitmap, 0, 0, bitmap.width, bitmap.height, matrix, true)
@@ -184,44 +199,98 @@ class CameraOcrActivity : AppCompatActivity() {
             processImage(bitmap)
         } catch (e: Exception) {
             Log.e("CameraOCR", "Gallery image processing failed", e)
-            showError("Error al procesar imagen de galeria")
+            showError("Error al procesar imagen")
         }
     }
 
     private fun processImage(bitmap: Bitmap) {
         showProcessing(true)
-        tvProcessing.text = "Analizando ecuacion..."
+        
+        if (switchMathpix.isChecked && BuildConfig.MATHPIX_APP_ID.isNotBlank()) {
+            tvProcessing.text = "Procesando con Mathpix..."
+            processMathpix(bitmap)
+        } else {
+            tvProcessing.text = "Procesando con ML Kit..."
+            processMLKit(bitmap)
+        }
+    }
 
+    private fun processMathpix(bitmap: Bitmap) {
+        CoroutineScope(Dispatchers.Main).launch {
+            try {
+                val base64 = bitmapToBase64(bitmap)
+                val request = MathpixRequest(src = "data:image/jpeg;base64,$base64")
+                
+                val response = withContext(Dispatchers.IO) {
+                    mathpixApi.recognizeImage(request)
+                }
+
+                if (response.error != null) {
+                    Log.e("Mathpix", "Error: ${response.error}")
+                    // Fallback a ML Kit
+                    tvProcessing.text = "Mathpix fallo, usando ML Kit..."
+                    processMLKit(bitmap)
+                } else {
+                    val latex = response.latex_styled ?: response.text ?: ""
+                    if (latex.isBlank()) {
+                        showError("No se detecto ecuacion")
+                    } else {
+                        returnResult(latex)
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e("Mathpix", "Exception", e)
+                // Fallback a ML Kit
+                tvProcessing.text = "Error Mathpix, usando ML Kit..."
+                processMLKit(bitmap)
+            }
+        }
+    }
+
+    private fun processMLKit(bitmap: Bitmap) {
         val image = InputImage.fromBitmap(bitmap, 0)
 
-        recognizer.process(image)
+        mlKitRecognizer.process(image)
             .addOnSuccessListener { visionText ->
                 val text = visionText.text
-                Log.d("CameraOCR", "Text detected: $text")
+                Log.d("MLKit", "Text: $text")
 
                 if (text.isBlank()) {
                     showError("No se detecto texto")
                     return@addOnSuccessListener
                 }
 
-                // Convertir a LaTeX basico
                 val latex = convertToLatex(text)
                 returnResult(latex)
             }
             .addOnFailureListener { e ->
-                Log.e("CameraOCR", "Text recognition failed", e)
+                Log.e("MLKit", "Failed", e)
                 showError("Error: ${e.message}")
             }
     }
 
+    private fun bitmapToBase64(bitmap: Bitmap): String {
+        // Comprimir imagen para Mathpix
+        val maxSize = 1024
+        val ratio = maxSize.toFloat() / maxOf(bitmap.width, bitmap.height)
+        val resized = if (ratio < 1) {
+            Bitmap.createScaledBitmap(
+                bitmap,
+                (bitmap.width * ratio).toInt(),
+                (bitmap.height * ratio).toInt(),
+                true
+            )
+        } else bitmap
+
+        val baos = ByteArrayOutputStream()
+        resized.compress(Bitmap.CompressFormat.JPEG, 90, baos)
+        return Base64.encodeToString(baos.toByteArray(), Base64.NO_WRAP)
+    }
+
     private fun convertToLatex(text: String): String {
-        // Limpieza basica
         var latex = text.trim()
             .replace("\n", " ")
             .replace("  ", " ")
-
-        // Conversiones comunes
-        latex = latex
             .replace("'", "'")
             .replace("’", "'")
             .replace(" x ", "x")
@@ -232,7 +301,6 @@ class CameraOcrActivity : AppCompatActivity() {
             .replace(" * ", "\\times")
             .replace("*", "\\times")
             .replace(" / ", "\\div")
-            .replace("/", "\\frac{}{}")  // Usuario tendra que ajustar
             .replace("^", "^{}")
             .replace("sin", "\\sin")
             .replace("cos", "\\cos")
@@ -241,13 +309,6 @@ class CameraOcrActivity : AppCompatActivity() {
             .replace("log", "\\log")
             .replace("sqrt", "\\sqrt{}")
             .replace("√", "\\sqrt{}")
-
-        // Detectar derivadas
-        if (latex.contains("'")) {
-            // dy/dx -> y'
-            // ya esta en formato y'
-        }
-
         return latex
     }
 
@@ -264,6 +325,7 @@ class CameraOcrActivity : AppCompatActivity() {
             processingCard.visibility = if (show) View.VISIBLE else View.GONE
             btnCapture.isEnabled = !show
             btnGallery.isEnabled = !show
+            switchMathpix.isEnabled = !show
         }
     }
 
@@ -277,7 +339,7 @@ class CameraOcrActivity : AppCompatActivity() {
     override fun onDestroy() {
         super.onDestroy()
         cameraExecutor.shutdown()
-        recognizer.close()
+        mlKitRecognizer.close()
     }
 
     companion object {

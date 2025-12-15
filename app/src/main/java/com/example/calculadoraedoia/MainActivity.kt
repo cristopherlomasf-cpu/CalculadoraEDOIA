@@ -346,33 +346,35 @@ class MainActivity : AppCompatActivity(), KeyboardPageFragment.KeyClickListener 
 
         setResultLatex("\\[\\text{Resolviendo...}\\]")
 
-        // Prompt mejorado con formato vertical
+        // Prompt simplificado sin espacios raros
         val prompt = buildString {
-            appendLine("Resuelve esta EDO y devuelve SOLO LaTeX para MathJax. NO uses bloques de código (```latex).")
+            appendLine("Resuelve esta EDO y devuelve SOLO LaTeX para MathJax. NO uses bloques de código ni markdown.")
             appendLine("")
-            appendLine("FORMATO OBLIGATORIO:")
-            appendLine("Parte 1 - SOLUCIÓN:")
+            appendLine("FORMATO ESTRICTO:")
+            appendLine("")
+            appendLine("Parte 1 (ANTES del delimitador):")
             appendLine("\\[\\textbf{SOLUCION}\\]")
-            appendLine("\\[\\textbf{TIPO:}\\ \\text{tipo de EDO}\\]")
-            appendLine("\\[y = \\text{solución final}\\]")
+            appendLine("\\[\\textbf{TIPO:} \\text{descripción del tipo}\\]")
+            appendLine("\\[y = \\text{resultado final}\\]")
             appendLine("")
+            appendLine("Delimitador obligatorio en una línea sola:")
             appendLine("<<<PASOS>>>")
             appendLine("")
-            appendLine("Parte 2 - PASOS (cada paso en su propia línea \\[...\\]):")
+            appendLine("Parte 2 (DESPUÉS del delimitador):")
             appendLine("\\[\\textbf{PASOS}\\]")
-            appendLine("\\[\\textbf{METODO:}\\ \\text{método usado}\\]")
-            appendLine("\\[\\text{Paso 1: Breve descripción}\\]")
-            appendLine("\\[ecuación \\ o \\ resultado \\ del \\ paso \\ 1\\]")
-            appendLine("\\[\\text{Paso 2: Breve descripción}\\]")
-            appendLine("\\[ecuación \\ o \\ resultado \\ del \\ paso \\ 2\\]")
-            appendLine("(continúa con más pasos hasta resolver)")
+            appendLine("\\[\\textbf{METODO:} \\text{nombre del método}\\]")
+            appendLine("\\[\\text{Paso 1: Descripción corta}\\]")
+            appendLine("\\[ecuaciones\\]")
+            appendLine("\\[\\text{Paso 2: Descripción corta}\\]")
+            appendLine("\\[ecuaciones\\]")
+            appendLine("(continúa hasta terminar)")
             appendLine("")
-            appendLine("REGLAS:")
-            appendLine("- NUNCA uses bloques de código ```latex")
-            appendLine("- Cada paso debe tener 2 líneas: descripción y ecuación")
-            appendLine("- Cada línea debe estar en su propio \\[...\\]")
-            appendLine("- Usa espacios \\ entre palabras largas para evitar desbordamiento")
-            appendLine("- Si no puedes resolver, deja en función de C")
+            appendLine("REGLAS IMPORTANTES:")
+            appendLine("1. NO uses bloques ```latex```")
+            appendLine("2. NO uses barras invertidas para espaciar (\\). Usa espacios normales")
+            appendLine("3. TODA la solución debe estar ANTES de <<<PASOS>>>")
+            appendLine("4. TODOS los pasos deben estar DESPUÉS de <<<PASOS>>>")
+            appendLine("5. Cada paso debe tener descripción y ecuación en líneas separadas")
             appendLine("")
             appendLine("EDO: $equation")
             if (hasPvi) appendLine("PVI: x0=$x0, y0=$y0")
@@ -385,7 +387,7 @@ class MainActivity : AppCompatActivity(), KeyboardPageFragment.KeyClickListener 
                         PplxRequest(
                             model = "sonar-pro",
                             messages = listOf(
-                                PplxMessage("system", "Devuelve únicamente LaTeX válido para MathJax. NO uses bloques de código."),
+                                PplxMessage("system", "Devuelve únicamente LaTeX válido para MathJax. Sin bloques de código ni markdown."),
                                 PplxMessage("user", prompt)
                             ),
                             temperature = 0.2
@@ -426,14 +428,16 @@ class MainActivity : AppCompatActivity(), KeyboardPageFragment.KeyClickListener 
 
     private fun splitSolutionSteps(allLatex: String): Pair<String, String> {
         val delim = "<<<PASOS>>>"
-        val solution = allLatex.substringBefore(delim).trim()
-        val steps = allLatex.substringAfter(delim, missingDelimiterValue = "").trim()
+        val parts = allLatex.split(delim, limit = 2)
+        
+        val solution = if (parts.isNotEmpty()) parts[0].trim() else ""
+        val steps = if (parts.size > 1) parts[1].trim() else ""
 
         val safeSolution = solution.ifBlank {
-            "\\[\\textbf{SOLUCION}\\]\n\\[\\textbf{TIPO:}\\ \\text{(no disponible)}\\]"
+            "\\[\\textbf{SOLUCION}\\]\n\\[\\textbf{TIPO:} \\text{(no disponible)}\\]"
         }
         val safeSteps = steps.ifBlank {
-            "\\[\\textbf{PASOS}\\]\n\\[\\textbf{METODO:}\\ \\text{(no disponible)}\\]"
+            "\\[\\textbf{PASOS}\\]\n\\[\\textbf{METODO:} \\text{(no disponible)}\\]"
         }
         return Pair(safeSolution, safeSteps)
     }

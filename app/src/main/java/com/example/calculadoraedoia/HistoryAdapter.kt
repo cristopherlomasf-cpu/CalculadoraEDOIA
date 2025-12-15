@@ -111,7 +111,8 @@ class HistoryAdapter(
 
         fun bind(history: EquationHistory) {
             // Renderizar ecuación
-            setLatexToWebView(wvEquation, "\\[${history.equation}\\]")
+            val eqLatex = "\\[${history.equation}\\]"
+            setLatexToWebView(wvEquation, eqLatex)
 
             // PVI
             val hasPvi = !history.x0.isNullOrBlank() || !history.y0.isNullOrBlank()
@@ -168,11 +169,11 @@ class HistoryAdapter(
             sb.append('"')
             for (ch in s) {
                 when (ch) {
-                    '\\\\' -> sb.append("\\\\\\\\")
-                    '"' -> sb.append("\\\\\"")
-                    '\\n' -> sb.append("\\\\n")
-                    '\\r' -> sb.append("\\\\r")
-                    '\\t' -> sb.append("\\\\t")
+                    '\\' -> sb.append("\\\\")
+                    '"' -> sb.append("\\")
+                    '\n' -> sb.append("\\n")
+                    '\r' -> sb.append("\\r")
+                    '\t' -> sb.append("\\t")
                     else -> sb.append(ch)
                 }
             }

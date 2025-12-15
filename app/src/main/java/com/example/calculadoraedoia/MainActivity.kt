@@ -396,7 +396,7 @@ class MainActivity : AppCompatActivity(), KeyboardPageFragment.KeyClickListener 
 
         setResultLatex("\\[\\text{Resolviendo...}\\]")
 
-        // Prompt simplificado sin espacios raros
+        // Prompt optimizado para sonar-reasoning
         val prompt = buildString {
             appendLine("Resuelve esta EDO y devuelve SOLO LaTeX para MathJax. NO uses bloques de código ni markdown.")
             appendLine("")
@@ -425,6 +425,7 @@ class MainActivity : AppCompatActivity(), KeyboardPageFragment.KeyClickListener 
             appendLine("3. TODA la solución debe estar ANTES de <<<PASOS>>>")
             appendLine("4. TODOS los pasos deben estar DESPUÉS de <<<PASOS>>>")
             appendLine("5. Cada paso debe tener descripción y ecuación en líneas separadas")
+            appendLine("6. Verifica tus cálculos y sé PRECISO en los resultados")
             appendLine("")
             appendLine("EDO: $equation")
             if (hasPvi) appendLine("PVI: x0=$x0, y0=$y0")
@@ -435,12 +436,12 @@ class MainActivity : AppCompatActivity(), KeyboardPageFragment.KeyClickListener 
                 val resp = withContext(Dispatchers.IO) {
                     api.chat(
                         PplxRequest(
-                            model = "sonar-pro",
+                            model = "sonar-reasoning",
                             messages = listOf(
-                                PplxMessage("system", "Devuelve únicamente LaTeX válido para MathJax. Sin bloques de código ni markdown."),
+                                PplxMessage("system", "Eres un experto matemático. Devuelve únicamente LaTeX válido para MathJax. Sin bloques de código ni markdown. Verifica tus cálculos cuidadosamente."),
                                 PplxMessage("user", prompt)
                             ),
-                            temperature = 0.2
+                            temperature = 0.1
                         )
                     )
                 }

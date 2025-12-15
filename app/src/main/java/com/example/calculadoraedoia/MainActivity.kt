@@ -2,17 +2,26 @@ package com.example.calculadoraedoia
 
 import android.annotation.SuppressLint
 import android.content.Intent
+import android.content.res.Configuration
 import android.graphics.Color
 import android.os.Bundle
 import android.util.Log
+import android.view.Menu
+import android.view.MenuItem
 import android.webkit.JavascriptInterface
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.widget.Button
 import android.widget.EditText
 import android.widget.TextView
+import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.app.AppCompatDelegate
+import androidx.lifecycle.lifecycleScope
+import com.example.calculadoraedoia.database.AppDatabase
+import com.example.calculadoraedoia.database.EquationHistory
+import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -24,15 +33,15 @@ import java.io.IOException
 class MainActivity : AppCompatActivity() {
 
     private val api by lazy { PerplexityClient.create(BuildConfig.PPLX_API_KEY) }
+    private val database by lazy { AppDatabase.getDatabase(this) }
 
+    private lateinit var toolbar: MaterialToolbar
     private lateinit var etEquation: EditText
     private lateinit var etX0: EditText
     private lateinit var etY0: EditText
-
     private lateinit var tvFieldLabel: TextView
     private lateinit var wvMathLive: WebView
     private lateinit var wvResult: WebView
-
     private lateinit var btnPvi: Button
     private lateinit var btnSolve: Button
     private lateinit var btnToggleSteps: Button
@@ -54,9 +63,26 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private val historyLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == RESULT_OK) {
+            val equation = result.data?.getStringExtra(HistoryActivity.EXTRA_EQUATION) ?: ""
+            val x0 = result.data?.getStringExtra(HistoryActivity.EXTRA_X0) ?: ""
+            val y0 = result.data?.getStringExtra(HistoryActivity.EXTRA_Y0) ?: ""
+            val solution = result.data?.getStringExtra(HistoryActivity.EXTRA_SOLUTION) ?: ""
+            val steps = result.data?.getStringExtra(HistoryActivity.EXTRA_STEPS) ?: ""
+
+            loadFromHistory(equation, x0, y0, solution, steps)
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+
+        toolbar = findViewById(R.id.toolbar)
+        setSupportActionBar(toolbar)
 
         etEquation = findViewById(R.id.etEquation)
         etX0 = findViewById(R.id.etX0)
@@ -108,17 +134,118 @@ class MainActivity : AppCompatActivity() {
         setResultLatex("\\[\\text{Presiona Resolver.}\\]")
     }
 
+    override fun onCreateOptionsMenu(menu: Menu?): Boolean {
+        menuInflater.inflate(R.menu.menu_main, menu)
+        return true
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        return when (item.itemId) {
+            R.id.action_history -> {
+                openHistory()
+                true
+            }
+            R.id.action_share -> {
+                shareSolution()
+                true
+            }
+            R.id.action_dark_mode -> {
+                toggleDarkMode()
+                true
+            }
+            else -> super.onOptionsItemSelected(item)
+        }
+    }
+
+    private fun openHistory() {
+        val intent = Intent(this, HistoryActivity::class.java)
+        historyLauncher.launch(intent)
+    }
+
+    private fun shareSolution() {
+        val equation = etEquation.text.toString()
+        val solution = lastSolutionLatex
+        val steps = lastStepsLatex
+
+        if (equation.isBlank() || solution == null) {
+            Toast.makeText(this, "Resuelve una ecuacion primero", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        val shareText = buildString {
+            appendLine("=== Calculadora EDO ===")
+            appendLine()
+            appendLine("Ecuacion: $equation")
+            appendLine()
+            appendLine("Solucion:")
+            appendLine(solution)
+            if (!steps.isNullOrBlank()) {
+                appendLine()
+                appendLine("Pasos:")
+                appendLine(steps)
+            }
+            appendLine()
+            appendLine("Generado con Calculadora EDO")
+        }
+
+        val shareIntent = Intent(Intent.ACTION_SEND).apply {
+            type = "text/plain"
+            putExtra(Intent.EXTRA_TEXT, shareText)
+            putExtra(Intent.EXTRA_SUBJECT, "Solucion EDO")
+        }
+        startActivity(Intent.createChooser(shareIntent, "Compartir solucion"))
+    }
+
+    private fun toggleDarkMode() {
+        val currentMode = resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK
+        val newMode = if (currentMode == Configuration.UI_MODE_NIGHT_YES) {
+            AppCompatDelegate.MODE_NIGHT_NO
+        } else {
+            AppCompatDelegate.MODE_NIGHT_YES
+        }
+        AppCompatDelegate.setDefaultNightMode(newMode)
+    }
+
+    private fun loadFromHistory(equation: String, x0: String, y0: String, solution: String, steps: String) {
+        etEquation.setText(equation)
+        etX0.setText(x0)
+        etY0.setText(y0)
+
+        if (isMathLiveReady) {
+            val jsCmd = "setLatex(${jsonString(equation)});"
+            wvMathLive.evaluateJavascript(jsCmd, null)
+        }
+
+        lastSolutionLatex = solution
+        lastStepsLatex = steps
+        btnToggleSteps.isEnabled = steps.isNotBlank()
+        setResultLatex(solution)
+    }
+
+    private fun saveToHistory(equation: String, x0: String?, y0: String?, solution: String, steps: String) {
+        lifecycleScope.launch {
+            try {
+                val history = EquationHistory(
+                    equation = equation,
+                    x0 = x0,
+                    y0 = y0,
+                    solution = solution,
+                    steps = steps
+                )
+                database.equationDao().insert(history)
+            } catch (e: Exception) {
+                Log.e("DB", "Error saving history", e)
+            }
+        }
+    }
+
     private fun insertLatexIntoEditor(latex: String) {
         if (!isMathLiveReady) return
-        
-        // Insertar el LaTeX en el campo activo
         when (activeField) {
             0 -> etEquation.setText(latex)
             1 -> etX0.setText(latex)
             2 -> etY0.setText(latex)
         }
-        
-        // Actualizar MathLive
         val jsCmd = "setLatex(${jsonString(latex)});"
         wvMathLive.evaluateJavascript(jsCmd, null)
     }
@@ -132,7 +259,6 @@ class MainActivity : AppCompatActivity() {
             override fun onPageFinished(view: WebView?, url: String?) {
                 super.onPageFinished(view, url)
                 isMathLiveReady = true
-                Log.d("MathLive", "Editor ready")
             }
         }
         wvMathLive.loadDataWithBaseURL(
@@ -180,12 +306,9 @@ class MainActivity : AppCompatActivity() {
 </head>
 <body>
     <math-field id="mathfield"></math-field>
-    
     <script type="module">
         import 'https://unpkg.com/mathlive@0.98.6/dist/mathlive.min.js';
-        
         const mf = document.getElementById('mathfield');
-        
         mf.setOptions({
             virtualKeyboardMode: 'manual',
             keypressSound: null,
@@ -239,38 +362,11 @@ class MainActivity : AppCompatActivity() {
             },
             virtualKeyboards: 'edo'
         });
-        
-        setTimeout(() => {
-            mf.executeCommand('showVirtualKeyboard');
-        }, 500);
-        
+        setTimeout(() => { mf.executeCommand('showVirtualKeyboard'); }, 500);
         mf.addEventListener('input', () => {
-            const latex = mf.value;
-            if (window.Android) {
-                Android.onLatexChanged(latex);
-            }
+            if (window.Android) Android.onLatexChanged(mf.value);
         });
-        
-        window.setLatex = function(latex) {
-            mf.value = latex;
-        };
-        
-        window.getLatex = function() {
-            return mf.value;
-        };
-        
-        window.insertLatex = function(latex) {
-            mf.executeCommand(['insert', latex]);
-        };
-        
-        window.clearMathfield = function() {
-            mf.value = '';
-        };
-        
-        window.deleteBackward = function() {
-            mf.executeCommand('deleteBackward');
-        };
-        
+        window.setLatex = function(latex) { mf.value = latex; };
         setTimeout(() => mf.focus(), 300);
     </script>
 </body>
@@ -287,7 +383,6 @@ class MainActivity : AppCompatActivity() {
                     1 -> etX0.setText(latex)
                     2 -> etY0.setText(latex)
                 }
-                Log.d("MathLive", "LaTeX updated: $latex")
             }
         }
     }
@@ -397,18 +492,24 @@ class MainActivity : AppCompatActivity() {
                 btnToggleSteps.isEnabled = true
                 setResultLatex(sol)
 
+                // Guardar en historial
+                saveToHistory(
+                    equation = equation,
+                    x0 = x0.ifBlank { null },
+                    y0 = y0.ifBlank { null },
+                    solution = sol,
+                    steps = steps
+                )
+
             } catch (e: HttpException) {
                 btnToggleSteps.isEnabled = false
                 setResultLatex("\\[\\text{HTTP ${e.code()}: ${e.message()}}\\]")
-                Log.e("NET", "HTTP error", e)
             } catch (e: IOException) {
                 btnToggleSteps.isEnabled = false
                 setResultLatex("\\[\\text{Error de red}\\]")
-                Log.e("NET", "Network error", e)
             } catch (e: Exception) {
                 btnToggleSteps.isEnabled = false
                 setResultLatex("\\[\\text{Error: ${e.javaClass.simpleName}}\\]")
-                Log.e("NET", "Unknown error", e)
             }
         }
     }

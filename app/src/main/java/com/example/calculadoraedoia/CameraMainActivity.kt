@@ -6,7 +6,6 @@ import android.content.pm.PackageManager
 import android.content.res.Configuration
 import android.net.Uri
 import android.os.Bundle
-import android.provider.MediaStore
 import android.view.View
 import android.widget.FrameLayout
 import android.widget.TextView
@@ -19,7 +18,6 @@ import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
 import androidx.core.content.ContextCompat
 import com.google.android.material.button.MaterialButton
-import com.google.android.material.floatingactionbutton.FloatingActionButton
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*
@@ -29,9 +27,9 @@ import java.util.concurrent.Executors
 class CameraMainActivity : AppCompatActivity() {
 
     private lateinit var previewView: PreviewView
-    private lateinit var fabCapture: FloatingActionButton
-    private lateinit var fabGallery: FloatingActionButton
-    private lateinit var fabManual: FloatingActionButton
+    private lateinit var fabCapture: MaterialButton
+    private lateinit var fabGallery: MaterialButton
+    private lateinit var fabManual: MaterialButton
     private lateinit var btnHistory: MaterialButton
     private lateinit var btnDarkMode: MaterialButton
     private lateinit var loadingOverlay: FrameLayout

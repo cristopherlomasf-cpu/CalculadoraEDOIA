@@ -8,6 +8,7 @@ import android.os.Bundle
 import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
+import android.view.View
 import android.webkit.JavascriptInterface
 import android.webkit.WebView
 import android.webkit.WebViewClient
@@ -22,6 +23,7 @@ import androidx.lifecycle.lifecycleScope
 import com.example.calculadoraedoia.database.AppDatabase
 import com.example.calculadoraedoia.database.EquationHistory
 import com.google.android.material.appbar.MaterialToolbar
+import com.google.android.material.card.MaterialCardView
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -46,8 +48,9 @@ class MainActivity : AppCompatActivity() {
     private lateinit var btnSolve: Button
     private lateinit var btnToggleSteps: Button
     private lateinit var fabCamera: FloatingActionButton
+    private lateinit var cardPvi: MaterialCardView
 
-    private var activeField = 0
+    private var isPviVisible = false
     private var lastSolutionLatex: String? = null
     private var lastStepsLatex: String? = null
     private var isMathLiveReady = false
@@ -94,20 +97,14 @@ class MainActivity : AppCompatActivity() {
         btnSolve = findViewById(R.id.btnSolve)
         btnToggleSteps = findViewById(R.id.btnToggleSteps)
         fabCamera = findViewById(R.id.fabCamera)
+        cardPvi = findViewById(R.id.cardPvi)
         btnToggleSteps.text = "Pasos"
 
         setupMathLiveEditor()
         setupWebView(wvResult)
 
         btnPvi.setOnClickListener {
-            activeField = when (activeField) {
-                0 -> 1
-                1 -> 2
-                else -> 0
-            }
-            updateFieldLabel()
-            updatePviButtonLabel()
-            focusMathLive()
+            togglePviVisibility()
         }
 
         btnSolve.setOnClickListener { onSolveClicked() }
@@ -128,10 +125,14 @@ class MainActivity : AppCompatActivity() {
             cameraOcrLauncher.launch(intent)
         }
 
-        updateFieldLabel()
-        updatePviButtonLabel()
         btnToggleSteps.isEnabled = false
         setResultLatex("\\[\\text{Presiona Resolver.}\\]")
+    }
+
+    private fun togglePviVisibility() {
+        isPviVisible = !isPviVisible
+        cardPvi.visibility = if (isPviVisible) View.VISIBLE else View.GONE
+        btnPvi.text = if (isPviVisible) "Ocultar PVI" else "PVI"
     }
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
@@ -218,6 +219,13 @@ class MainActivity : AppCompatActivity() {
             wvMathLive.evaluateJavascript(jsCmd, null)
         }
 
+        // Mostrar PVI si hay valores
+        if (x0.isNotBlank() || y0.isNotBlank()) {
+            isPviVisible = true
+            cardPvi.visibility = View.VISIBLE
+            btnPvi.text = "Ocultar PVI"
+        }
+
         lastSolutionLatex = solution
         lastStepsLatex = steps
         btnToggleSteps.isEnabled = steps.isNotBlank()
@@ -245,11 +253,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun insertLatexIntoEditor(latex: String) {
         if (!isMathLiveReady) return
-        when (activeField) {
-            0 -> etEquation.setText(latex)
-            1 -> etX0.setText(latex)
-            2 -> etY0.setText(latex)
-        }
+        etEquation.setText(latex)
         val jsCmd = "setLatex(${jsonString(latex)});"
         wvMathLive.evaluateJavascript(jsCmd, null)
     }
@@ -393,49 +397,9 @@ class MainActivity : AppCompatActivity() {
         @JavascriptInterface
         fun onLatexChanged(latex: String) {
             runOnUiThread {
-                when (activeField) {
-                    0 -> etEquation.setText(latex)
-                    1 -> etX0.setText(latex)
-                    2 -> etY0.setText(latex)
-                }
+                etEquation.setText(latex)
             }
         }
-    }
-
-    private fun updateFieldLabel() {
-        when (activeField) {
-            0 -> {
-                tvFieldLabel.text = "EDO:"
-                tvFieldLabel.setTextColor(Color.parseColor("#1976D2"))
-            }
-            1 -> {
-                tvFieldLabel.text = "Condicion inicial x0:"
-                tvFieldLabel.setTextColor(Color.parseColor("#388E3C"))
-            }
-            2 -> {
-                tvFieldLabel.text = "Condicion inicial y0:"
-                tvFieldLabel.setTextColor(Color.parseColor("#D32F2F"))
-            }
-        }
-    }
-
-    private fun updatePviButtonLabel() {
-        btnPvi.text = when (activeField) {
-            1 -> "x0"
-            2 -> "y0"
-            else -> "PVI"
-        }
-    }
-
-    private fun focusMathLive() {
-        if (!isMathLiveReady) return
-        val currentValue = when (activeField) {
-            1 -> etX0.text.toString()
-            2 -> etY0.text.toString()
-            else -> etEquation.text.toString()
-        }
-        val jsCmd = "setLatex(${jsonString(currentValue)});"
-        wvMathLive.evaluateJavascript(jsCmd, null)
     }
 
     private fun onSolveClicked() {

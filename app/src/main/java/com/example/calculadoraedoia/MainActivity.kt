@@ -312,20 +312,22 @@ class MainActivity : AppCompatActivity() {
         setResultLatex("\\[\\text{Resolviendo...}\\]")
 
         val prompt = buildString {
-            appendLine("Resuelve esta EDO. Solo LaTeX limpio.")
+            appendLine("Resuelve esta EDO con PRECISION MATEMATICA. Solo LaTeX.")
             appendLine("")
-            appendLine("FORMATO:")
-            appendLine("Antes de <<<PASOS>>>:")
+            appendLine("FORMATO obligatorio:")
+            appendLine("ANTES de <<<PASOS>>>:")
             appendLine("\\[\\textbf{SOLUCION}\\]")
-            appendLine("\\[\\textbf{TIPO:} \\text{tipo}\\]")
-            appendLine("\\[y = \\text{resultado}\\]")
+            appendLine("\\[\\textbf{TIPO:} \\text{clasificacion EDO}\\]")
+            appendLine("\\[y = \\text{solucion exacta}\\]")
             appendLine("")
             appendLine("<<<PASOS>>>")
             appendLine("")
-            appendLine("Despues:")
+            appendLine("DESPUES de <<<PASOS>>>:")
             appendLine("\\[\\textbf{PASOS}\\]")
-            appendLine("\\[\\textbf{METODO:} \\text{metodo}\\]")
-            appendLine("(pasos con ecuaciones)")
+            appendLine("\\[\\textbf{METODO:} \\text{metodo usado}\\]")
+            appendLine("(desarrollo paso a paso)")
+            appendLine("")
+            appendLine("IMPORTANTE: Verifica calculos. NO inventes soluciones.")
             appendLine("")
             appendLine("EDO: $equation")
             if (hasPvi) appendLine("PVI: x0=$x0, y0=$y0")
@@ -336,12 +338,12 @@ class MainActivity : AppCompatActivity() {
                 val resp = withContext(Dispatchers.IO) {
                     api.chat(
                         PplxRequest(
-                            model = "sonar",
+                            model = "sonar-reasoning",
                             messages = listOf(
-                                PplxMessage("system", "Experto EDO. Solo LaTeX."),
+                                PplxMessage("system", "Experto matematico en EDO. Solo LaTeX preciso."),
                                 PplxMessage("user", prompt)
                             ),
-                            temperature = 0.2
+                            temperature = 0.1
                         )
                     )
                 }

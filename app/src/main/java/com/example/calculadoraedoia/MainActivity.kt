@@ -42,7 +42,6 @@ class MainActivity : AppCompatActivity() {
     private var lastStepsLatex: String? = null
 
     private var isMathLiveReady = false
-    private var isResultWebViewReady = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -92,6 +91,7 @@ class MainActivity : AppCompatActivity() {
         updateFieldLabel()
         updatePviButtonLabel()
         btnToggleSteps.isEnabled = false
+        setResultLatex("\\[\\text{Presiona Resolver.}\\]")
     }
 
     @SuppressLint("SetJavaScriptEnabled")
@@ -159,7 +159,7 @@ class MainActivity : AppCompatActivity() {
         
         // Configuración del teclado personalizado
         mf.setOptions({
-            virtualKeyboardMode: 'onfocus',  // CAMBIADO: de 'manual' a 'onfocus'
+            virtualKeyboardMode: 'manual',
             keypressSound: null,
             plonkSound: null,
             
@@ -216,6 +216,11 @@ class MainActivity : AppCompatActivity() {
             virtualKeyboards: 'edo'
         });
         
+        // Mostrar el teclado automáticamente
+        setTimeout(() => {
+            mf.executeCommand('showVirtualKeyboard');
+        }, 500);
+        
         // Notificar a Android cuando cambia el contenido
         mf.addEventListener('input', () => {
             const latex = mf.value;
@@ -245,7 +250,7 @@ class MainActivity : AppCompatActivity() {
             mf.executeCommand('deleteBackward');
         };
         
-        // Auto-focus para que aparezca el teclado
+        // Auto-focus
         setTimeout(() => mf.focus(), 300);
     </script>
 </body>
@@ -330,26 +335,37 @@ class MainActivity : AppCompatActivity() {
         setResultLatex("\\[\\text{Resolviendo...}\\]")
 
         val prompt = buildString {
-            appendLine("Resuelve esta EDO PASO A PASO con PRECISIÓN MATEMÁTICA. Devuelve solo LaTeX.")
+            appendLine("Resuelve esta EDO y devuelve SOLO LaTeX para MathJax. NO uses bloques de código ni markdown.")
             appendLine("")
-            appendLine("Formato requerido:")
+            appendLine("FORMATO ESTRICTO:")
             appendLine("")
-            appendLine("ANTES de <<<PASOS>>>:")
+            appendLine("Parte 1 (ANTES del delimitador):")
             appendLine("\\[\\textbf{SOLUCION}\\]")
-            appendLine("\\[\\textbf{TIPO:} \\text{tipo de EDO}\\]")
-            appendLine("\\[y = \\text{solución completa con constante C si aplica}\\]")
+            appendLine("\\[\\textbf{TIPO:} \\text{descripción del tipo}\\]")
+            appendLine("\\[y = \\text{resultado final}\\]")
             appendLine("")
+            appendLine("Delimitador obligatorio en una línea sola:")
             appendLine("<<<PASOS>>>")
             appendLine("")
-            appendLine("DESPUÉS de <<<PASOS>>>:")
-            appendLine("\\[\\textbf{PASOS DETALLADOS}\\]")
-            appendLine("\\[\\textbf{METODO:} \\text{método utilizado}\\]")
-            appendLine("Incluye todos los pasos algebraicos intermedios")
+            appendLine("Parte 2 (DESPUÉS del delimitador):")
+            appendLine("\\[\\textbf{PASOS}\\]")
+            appendLine("\\[\\textbf{METODO:} \\text{nombre del método}\\]")
+            appendLine("\\[\\text{Paso 1: Descripción corta}\\]")
+            appendLine("\\[ecuaciones\\]")
+            appendLine("\\[\\text{Paso 2: Descripción corta}\\]")
+            appendLine("\\[ecuaciones\\]")
+            appendLine("(continúa hasta terminar)")
             appendLine("")
-            appendLine("IMPORTANTE: Verifica cada cálculo y NO inventes soluciones triviales como y=0")
+            appendLine("REGLAS IMPORTANTES:")
+            appendLine("1. NO uses bloques ```latex```")
+            appendLine("2. NO uses barras invertidas para espaciar. Usa espacios normales")
+            appendLine("3. TODA la solución debe estar ANTES de <<<PASOS>>>")
+            appendLine("4. TODOS los pasos deben estar DESPUÉS de <<<PASOS>>>")
+            appendLine("5. Cada paso debe tener descripción y ecuación en líneas separadas")
+            appendLine("6. Verifica tus cálculos y sé PRECISO en los resultados")
             appendLine("")
             appendLine("EDO: $equation")
-            if (hasPvi) appendLine("Condiciones iniciales: x0=$x0, y0=$y0")
+            if (hasPvi) appendLine("PVI: x0=$x0, y0=$y0")
         }
 
         CoroutineScope(Dispatchers.Main).launch {
@@ -357,12 +373,12 @@ class MainActivity : AppCompatActivity() {
                 val resp = withContext(Dispatchers.IO) {
                     api.chat(
                         PplxRequest(
-                            model = "sonar-pro",
+                            model = "sonar-reasoning",
                             messages = listOf(
-                                PplxMessage("system", "Eres un experto matemático especializado en ecuaciones diferenciales. Resuelve con precisión. Solo LaTeX, sin markdown."),
+                                PplxMessage("system", "Eres un experto matemático. Devuelve únicamente LaTeX válido para MathJax. Sin bloques de código ni markdown. Verifica tus cálculos cuidadosamente."),
                                 PplxMessage("user", prompt)
                             ),
-                            temperature = 0.2
+                            temperature = 0.1
                         )
                     )
                 }
@@ -405,10 +421,12 @@ class MainActivity : AppCompatActivity() {
         val steps = if (parts.size > 1) parts[1].trim() else ""
 
         val safeSolution = solution.ifBlank {
-            "\\[\\textbf{SOLUCION}\\]\n\\[\\textbf{TIPO:} \\text{(no disponible)}\\]"
+            "\\[\\textbf{SOLUCION}\\]
+\\[\\textbf{TIPO:} \\text{(no disponible)}\\]"
         }
         val safeSteps = steps.ifBlank {
-            "\\[\\textbf{PASOS}\\]\n\\[\\textbf{METODO:} \\text{(no disponible)}\\]"
+            "\\[\\textbf{PASOS}\\]
+\\[\\textbf{METODO:} \\text{(no disponible)}\\]"
         }
         return Pair(safeSolution, safeSteps)
     }
@@ -418,14 +436,7 @@ class MainActivity : AppCompatActivity() {
     private fun setupWebView(wv: WebView) {
         wv.settings.javaScriptEnabled = true
         wv.settings.domStorageEnabled = true
-        wv.webViewClient = object : WebViewClient() {
-            override fun onPageFinished(view: WebView?, url: String?) {
-                super.onPageFinished(view, url)
-                isResultWebViewReady = true
-                Log.d("ResultWebView", "Ready")
-                setResultLatex("\\[\\text{Presiona Resolver.}\\]")
-            }
-        }
+        wv.webViewClient = WebViewClient()
         wv.loadDataWithBaseURL("https://cdn.jsdelivr.net/", baseMathJaxHtml(), "text/html", "utf-8", null)
     }
 
@@ -459,19 +470,10 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun setResultLatex(latex: String) {
-        if (!isResultWebViewReady) {
-            Log.w("ResultWebView", "Not ready yet, skipping setResultLatex")
-            return
-        }
-        
         val js = """
             (function(){
               const tex = ${jsonString(latex)};
               const el = document.getElementById('math');
-              if (!el) {
-                console.error('Element #math not found');
-                return;
-              }
               if (window.MathJax && MathJax.typesetClear) MathJax.typesetClear([el]);
               el.textContent = tex;
               if (window.MathJax && MathJax.typesetPromise) MathJax.typesetPromise([el]);

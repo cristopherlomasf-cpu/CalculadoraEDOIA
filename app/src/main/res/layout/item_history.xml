@@ -18,24 +18,19 @@
         android:orientation="vertical"
         android:padding="16dp">
 
-        <!-- Header: Ecuacion + Botones -->
+        <!-- Header: Ecuación renderizada + Botones -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
             android:gravity="center_vertical">
 
-            <TextView
-                android:id="@+id/tvEquation"
+            <WebView
+                android:id="@+id/wvEquation"
                 android:layout_width="0dp"
-                android:layout_height="wrap_content"
+                android:layout_height="60dp"
                 android:layout_weight="1"
-                android:text="y' + 3y = x"
-                android:textSize="16sp"
-                android:textStyle="bold"
-                android:textColor="?android:attr/textColorPrimary"
-                android:maxLines="2"
-                android:ellipsize="end" />
+                android:background="@android:color/transparent" />
 
             <ImageButton
                 android:id="@+id/btnShare"
@@ -73,20 +68,15 @@
             android:layout_width="match_parent"
             android:layout_height="1dp"
             android:background="#E0E0E0"
-            android:layout_marginTop="12dp"
+            android:layout_marginTop="8dp"
             android:layout_marginBottom="8dp" />
 
-        <!-- Preview Solucion -->
-        <TextView
-            android:id="@+id/tvSolutionPreview"
+        <!-- Preview Solución renderizada -->
+        <WebView
+            android:id="@+id/wvSolutionPreview"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="\\[\\textbf{SOLUCION}\\]\\n\\[y = Ce^{-3x} + \\frac{x}{3} - \\frac{1}{9}\\]"
-            android:textSize="13sp"
-            android:textColor="?android:attr/textColorSecondary"
-            android:maxLines="2"
-            android:ellipsize="end"
-            android:fontFamily="monospace" />
+            android:layout_height="80dp"
+            android:background="@android:color/transparent" />
 
         <!-- Fecha -->
         <TextView

@@ -9,14 +9,17 @@ import android.graphics.Matrix
 import android.net.Uri
 import android.os.Bundle
 import android.provider.MediaStore
+import android.text.InputType
 import android.util.Base64
 import android.util.Log
 import android.view.View
 import android.widget.Button
+import android.widget.EditText
 import android.widget.Switch
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.camera.core.*
 import androidx.camera.lifecycle.ProcessCameraProvider
@@ -41,6 +44,7 @@ class CameraOcrActivity : AppCompatActivity() {
     private lateinit var btnCapture: FloatingActionButton
     private lateinit var btnCancel: Button
     private lateinit var btnGallery: Button
+    private lateinit var btnManualInput: Button
     private lateinit var switchMathpix: Switch
     private lateinit var processingCard: CardView
     private lateinit var tvProcessing: TextView
@@ -50,7 +54,9 @@ class CameraOcrActivity : AppCompatActivity() {
 
     private val mlKitRecognizer = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)
     private val mathpixApi by lazy {
-        MathpixClient.create(BuildConfig.MATHPIX_APP_ID, BuildConfig.MATHPIX_APP_KEY)
+        if (BuildConfig.MATHPIX_APP_ID.isNotBlank()) {
+            MathpixClient.create(BuildConfig.MATHPIX_APP_ID, BuildConfig.MATHPIX_APP_KEY)
+        } else null
     }
 
     private val requestPermissionLauncher = registerForActivityResult(
@@ -59,7 +65,7 @@ class CameraOcrActivity : AppCompatActivity() {
         if (isGranted) {
             startCamera()
         } else {
-            Toast.makeText(this, "Permiso de camara denegado", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "Permiso de cámara denegado", Toast.LENGTH_SHORT).show()
             finish()
         }
     }
@@ -82,21 +88,23 @@ class CameraOcrActivity : AppCompatActivity() {
         btnCapture = findViewById(R.id.btnCapture)
         btnCancel = findViewById(R.id.btnCancel)
         btnGallery = findViewById(R.id.btnGallery)
+        btnManualInput = findViewById(R.id.btnManualInput)
         switchMathpix = findViewById(R.id.switchMathpix)
         processingCard = findViewById(R.id.processingCard)
         tvProcessing = findViewById(R.id.tvProcessing)
 
         cameraExecutor = Executors.newSingleThreadExecutor()
 
-        // FORZAR Mathpix por defecto (mejor para matemáticas)
-        switchMathpix.isChecked = true
-        switchMathpix.isEnabled = BuildConfig.MATHPIX_APP_ID.isNotBlank()
-
-        // Mostrar advertencia si no hay credenciales Mathpix
-        if (BuildConfig.MATHPIX_APP_ID.isBlank()) {
+        // Configurar Mathpix
+        val hasMathpix = BuildConfig.MATHPIX_APP_ID.isNotBlank()
+        switchMathpix.isChecked = hasMathpix
+        switchMathpix.isEnabled = hasMathpix
+        
+        if (!hasMathpix) {
+            switchMathpix.visibility = View.GONE
             Toast.makeText(
                 this,
-                "Mathpix no configurado. Usando ML Kit (menos preciso para ecuaciones)",
+                "⚠️ Sin Mathpix. ML Kit detecta texto básico, no ecuaciones complejas.",
                 Toast.LENGTH_LONG
             ).show()
         }
@@ -111,6 +119,10 @@ class CameraOcrActivity : AppCompatActivity() {
 
         btnGallery.setOnClickListener {
             openGallery()
+        }
+        
+        btnManualInput.setOnClickListener {
+            showManualInputDialog()
         }
 
         // Verificar si viene de URI de imagen directamente
@@ -150,7 +162,7 @@ class CameraOcrActivity : AppCompatActivity() {
                 }
 
             imageCapture = ImageCapture.Builder()
-                .setCaptureMode(ImageCapture.CAPTURE_MODE_MAXIMIZE_QUALITY) // Cambiar a QUALITY
+                .setCaptureMode(ImageCapture.CAPTURE_MODE_MAXIMIZE_QUALITY)
                 .build()
 
             val cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
@@ -223,20 +235,18 @@ class CameraOcrActivity : AppCompatActivity() {
     private fun processImage(bitmap: Bitmap) {
         showProcessing(true)
         
-        // Pre-procesar imagen para mejorar detección
         val processedBitmap = preprocessImage(bitmap)
         
-        if (switchMathpix.isChecked && BuildConfig.MATHPIX_APP_ID.isNotBlank()) {
-            tvProcessing.text = "🔍 Analizando ecuación con Mathpix..."
+        if (switchMathpix.isChecked && mathpixApi != null) {
+            tvProcessing.text = "🔍 Analizando con Mathpix..."
             processMathpix(processedBitmap)
         } else {
-            tvProcessing.text = "🔍 Analizando texto con ML Kit..."
+            tvProcessing.text = "🔍 Detectando texto..."
             processMLKit(processedBitmap)
         }
     }
 
     private fun preprocessImage(bitmap: Bitmap): Bitmap {
-        // Redimensionar si es muy grande (mejora velocidad)
         val maxDimension = 2048
         val scale = minOf(
             maxDimension.toFloat() / bitmap.width,
@@ -262,33 +272,29 @@ class CameraOcrActivity : AppCompatActivity() {
                 val base64 = bitmapToBase64(bitmap)
                 val request = MathpixRequest(
                     src = "data:image/jpeg;base64,$base64",
-                    formats = listOf("latex_styled", "text"),
-                    data_options = mapOf(
-                        "include_asciimath" to false,
-                        "include_latex" to true
-                    )
+                    formats = listOf("latex_styled", "text")
                 )
                 
                 val response = withContext(Dispatchers.IO) {
-                    mathpixApi.recognizeImage(request)
+                    mathpixApi!!.recognizeImage(request)
                 }
 
                 if (response.error != null) {
                     Log.e("Mathpix", "Error: ${response.error}")
-                    showError("❌ Mathpix error: ${response.error}\n\nIntenta con mejor iluminación")
+                    showError("❌ Mathpix: ${response.error}")
                 } else {
                     val latex = response.latex_styled ?: response.text ?: ""
                     Log.d("Mathpix", "Detected: $latex")
                     
                     if (latex.isBlank()) {
-                        showError("❌ No se detectó ecuación\n\nConsejos:\n• Mejor iluminación\n• Enfoque nítido\n• Letra clara")
+                        showErrorWithManualOption("No se detectó ecuación")
                     } else {
                         returnResult(latex)
                     }
                 }
             } catch (e: Exception) {
                 Log.e("Mathpix", "Exception", e)
-                showError("❌ Error de conexión con Mathpix\n\n${e.message}")
+                showError("❌ Error: ${e.message}")
             }
         }
     }
@@ -299,25 +305,119 @@ class CameraOcrActivity : AppCompatActivity() {
         mlKitRecognizer.process(image)
             .addOnSuccessListener { visionText ->
                 val text = visionText.text
-                Log.d("MLKit", "Text: $text")
+                Log.d("MLKit", "Raw text: $text")
 
                 if (text.isBlank()) {
-                    showError("❌ No se detectó texto\n\nNota: ML Kit no es ideal para ecuaciones.\nActiva Mathpix para mejores resultados.")
+                    showErrorWithManualOption("No se detectó texto")
                     return@addOnSuccessListener
                 }
 
-                val latex = convertToLatex(text)
+                // Intentar convertir a LaTeX
+                val latex = improvedTextToLatex(text)
                 Log.d("MLKit", "Converted: $latex")
-                returnResult(latex)
+                
+                // Mostrar confirmación con opción de editar
+                showConfirmationDialog(latex, text)
             }
             .addOnFailureListener { e ->
                 Log.e("MLKit", "Failed", e)
-                showError("❌ Error ML Kit: ${e.message}")
+                showError("❌ Error: ${e.message}")
             }
     }
 
+    private fun improvedTextToLatex(text: String): String {
+        var latex = text.trim()
+            .replace("\n", " ")
+            .replace(Regex("\\s+"), " ")
+            
+        // Detectar derivadas
+        latex = latex
+            .replace(Regex("dy\\s*/\\s*dx"), "\\frac{dy}{dx}")
+            .replace(Regex("d\\^?2y\\s*/\\s*dx\\^?2"), "\\frac{d^2y}{dx^2}")
+            .replace("y''", "y''")
+            .replace("y'", "y'")
+            
+        // Fracciones
+        latex = latex.replace(Regex("(\\d+)\\s*/\\s*(\\d+)")) { match ->
+            "\\frac{${match.groupValues[1]}}{${match.groupValues[2]}}"
+        }
+        
+        // Operadores
+        latex = latex
+            .replace("*", "\\cdot")
+            .replace("x", "\\cdot")
+            
+        // Funciones
+        latex = latex
+            .replace(Regex("\\bsin\\b"), "\\sin")
+            .replace(Regex("\\bcos\\b"), "\\cos")
+            .replace(Regex("\\btan\\b"), "\\tan")
+            .replace(Regex("\\bln\\b"), "\\ln")
+            .replace(Regex("\\blog\\b"), "\\log")
+            .replace(Regex("\\bexp\\b"), "\\exp")
+            
+        // Raíces
+        latex = latex
+            .replace("sqrt", "\\sqrt")
+            .replace("√", "\\sqrt")
+            
+        return latex
+    }
+
+    private fun showConfirmationDialog(latex: String, originalText: String) {
+        runOnUiThread {
+            showProcessing(false)
+            
+            AlertDialog.Builder(this)
+                .setTitle("📝 Texto detectado")
+                .setMessage("Texto: $originalText\n\nConvertido: $latex\n\n¿Usar esta ecuación?")
+                .setPositiveButton("Usar") { _, _ ->
+                    returnResult(latex)
+                }
+                .setNeutralButton("Editar") { _, _ ->
+                    showManualInputDialog(latex)
+                }
+                .setNegativeButton("Reintentar", null)
+                .show()
+        }
+    }
+
+    private fun showManualInputDialog(initialText: String = "") {
+        val input = EditText(this)
+        input.inputType = InputType.TYPE_CLASS_TEXT
+        input.hint = "Ej: dy/dx + 2y = x^2"
+        input.setText(initialText)
+        
+        AlertDialog.Builder(this)
+            .setTitle("✏️ Escribir ecuación manualmente")
+            .setMessage("Escribe la ecuación diferencial:")
+            .setView(input)
+            .setPositiveButton("OK") { _, _ ->
+                val text = input.text.toString().trim()
+                if (text.isNotBlank()) {
+                    returnResult(improvedTextToLatex(text))
+                }
+            }
+            .setNegativeButton("Cancelar", null)
+            .show()
+    }
+
+    private fun showErrorWithManualOption(message: String) {
+        runOnUiThread {
+            showProcessing(false)
+            
+            AlertDialog.Builder(this)
+                .setTitle("❌ $message")
+                .setMessage("¿Qué deseas hacer?")
+                .setPositiveButton("Escribir manual") { _, _ ->
+                    showManualInputDialog()
+                }
+                .setNegativeButton("Reintentar", null)
+                .show()
+        }
+    }
+
     private fun bitmapToBase64(bitmap: Bitmap): String {
-        // Comprimir imagen para Mathpix (max 4MB)
         val maxSize = 1600
         val ratio = maxSize.toFloat() / maxOf(bitmap.width, bitmap.height)
         val resized = if (ratio < 1) {
@@ -334,31 +434,6 @@ class CameraOcrActivity : AppCompatActivity() {
         return Base64.encodeToString(baos.toByteArray(), Base64.NO_WRAP)
     }
 
-    private fun convertToLatex(text: String): String {
-        var latex = text.trim()
-            .replace("\n", " ")
-            .replace("  ", " ")
-            .replace("’", "'")
-            .replace("‘", "'")
-            .replace(" x ", "x")
-            .replace(" y ", "y")
-            .replace(" = ", "=")
-            .replace(" + ", "+")
-            .replace(" - ", "-")
-            .replace(" * ", "\\times")
-            .replace("*", "\\times")
-            .replace(" / ", "\\div")
-            .replace("^", "^{}")
-            .replace("sin", "\\sin")
-            .replace("cos", "\\cos")
-            .replace("tan", "\\tan")
-            .replace("ln", "\\ln")
-            .replace("log", "\\log")
-            .replace("sqrt", "\\sqrt{}")
-            .replace("√", "\\sqrt{}")
-        return latex
-    }
-
     private fun returnResult(latex: String) {
         val resultIntent = Intent().apply {
             putExtra(EXTRA_LATEX_RESULT, latex)
@@ -372,7 +447,8 @@ class CameraOcrActivity : AppCompatActivity() {
             processingCard.visibility = if (show) View.VISIBLE else View.GONE
             btnCapture.isEnabled = !show
             btnGallery.isEnabled = !show
-            switchMathpix.isEnabled = !show
+            btnManualInput.isEnabled = !show
+            switchMathpix.isEnabled = !show && mathpixApi != null
         }
     }
 

@@ -1,10 +1,10 @@
 package com.example.calculadoraedoia
 
+import android.annotation.SuppressLint
 import android.graphics.Color
 import android.os.Bundle
-import android.text.Editable
-import android.text.TextWatcher
 import android.util.Log
+import android.webkit.JavascriptInterface
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.widget.Button
@@ -30,7 +30,7 @@ class MainActivity : AppCompatActivity(), KeyboardPageFragment.KeyClickListener 
     private lateinit var etY0: EditText
 
     private lateinit var tvFieldLabel: TextView
-    private lateinit var wvPreviewTop: WebView
+    private lateinit var wvMathLive: WebView
     private lateinit var wvResult: WebView
 
     private lateinit var tabLayout: TabLayout
@@ -44,14 +44,12 @@ class MainActivity : AppCompatActivity(), KeyboardPageFragment.KeyClickListener 
     // 0=EDO, 1=x0, 2=y0
     private var activeField = 0
 
-    // Preview debounce
-    private val previewDelayMs = 120L
-    private var previewRunnable: Runnable? = null
-
     // Toggle pasos
     private var showSteps = false
     private var lastSolutionLatex: String? = null
     private var lastStepsLatex: String? = null
+
+    private var isMathLiveReady = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -62,7 +60,7 @@ class MainActivity : AppCompatActivity(), KeyboardPageFragment.KeyClickListener 
         etY0 = findViewById(R.id.etY0)
 
         tvFieldLabel = findViewById(R.id.tvFieldLabel)
-        wvPreviewTop = findViewById(R.id.wvPreviewTop)
+        wvMathLive = findViewById(R.id.wvMathLive)
         wvResult = findViewById(R.id.wvLatexResult)
 
         tabLayout = findViewById(R.id.tabKeyboard)
@@ -71,14 +69,9 @@ class MainActivity : AppCompatActivity(), KeyboardPageFragment.KeyClickListener 
         btnPvi = findViewById(R.id.btnPvi)
         btnSolve = findViewById(R.id.btnSolve)
         btnToggleSteps = findViewById(R.id.btnToggleSteps)
-        btnToggleSteps.text = "Ver pasos"
+        btnToggleSteps.text = "Pasos"
 
-        // No teclado del sistema
-        etEquation.showSoftInputOnFocus = false
-        etX0.showSoftInputOnFocus = false
-        etY0.showSoftInputOnFocus = false
-
-        setupWebView(wvPreviewTop)
+        setupMathLiveEditor()
         setupWebView(wvResult)
 
         pagerAdapter = KeyboardPagerAdapter(this)
@@ -86,15 +79,6 @@ class MainActivity : AppCompatActivity(), KeyboardPageFragment.KeyClickListener 
         TabLayoutMediator(tabLayout, viewPager) { tab, pos ->
             tab.text = pagerAdapter.title(pos)
         }.attach()
-
-        val watcher = object : TextWatcher {
-            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
-            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) { schedulePreview() }
-            override fun afterTextChanged(s: Editable?) {}
-        }
-        etEquation.addTextChangedListener(watcher)
-        etX0.addTextChangedListener(watcher)
-        etY0.addTextChangedListener(watcher)
 
         btnPvi.setOnClickListener {
             activeField = when (activeField) {
@@ -104,7 +88,7 @@ class MainActivity : AppCompatActivity(), KeyboardPageFragment.KeyClickListener 
             }
             updateFieldLabel()
             updatePviButtonLabel()
-            schedulePreview()
+            focusMathLive()
         }
 
         btnSolve.setOnClickListener { onSolveClicked() }
@@ -120,254 +104,241 @@ class MainActivity : AppCompatActivity(), KeyboardPageFragment.KeyClickListener 
             startActivity(i)
         }
 
-
         // Estado inicial
         updateFieldLabel()
         updatePviButtonLabel()
-        btnToggleSteps.text = "Ver pasos"
         btnToggleSteps.isEnabled = false
-        renderPreview()
         setResultLatex("\\[\\text{Presiona Resolver.}\\]")
+    }
+
+    @SuppressLint("SetJavaScriptEnabled")
+    private fun setupMathLiveEditor() {
+        wvMathLive.settings.javaScriptEnabled = true
+        wvMathLive.settings.domStorageEnabled = true
+        wvMathLive.addJavascriptInterface(MathLiveInterface(), "Android")
+        wvMathLive.webViewClient = object : WebViewClient() {
+            override fun onPageFinished(view: WebView?, url: String?) {
+                super.onPageFinished(view, url)
+                isMathLiveReady = true
+                Log.d("MathLive", "Editor ready")
+            }
+        }
+        wvMathLive.loadDataWithBaseURL(
+            "https://unpkg.com/",
+            getMathLiveHtml(),
+            "text/html",
+            "utf-8",
+            null
+        )
+    }
+
+    private fun getMathLiveHtml(): String {
+        return """
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no"/>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: system-ui;
+            padding: 8px;
+            background: #FAFAFA;
+            overflow: hidden;
+        }
+        #mathfield {
+            font-size: 28px;
+            padding: 12px;
+            border: 2px solid #E0E0E0;
+            border-radius: 8px;
+            background: white;
+            min-height: 80px;
+            width: 100%;
+        }
+        #mathfield:focus {
+            border-color: #1976D2;
+            outline: none;
+        }
+    </style>
+</head>
+<body>
+    <math-field id="mathfield" virtual-keyboard-mode="manual">
+    </math-field>
+    
+    <script type="module">
+        import 'https://unpkg.com/mathlive@0.98.6/dist/mathlive.min.js';
+        
+        const mf = document.getElementById('mathfield');
+        
+        // Notificar a Android cuando cambia el contenido
+        mf.addEventListener('input', () => {
+            const latex = mf.value;
+            if (window.Android) {
+                Android.onLatexChanged(latex);
+            }
+        });
+        
+        // Exponer funciones para Android
+        window.setLatex = function(latex) {
+            mf.value = latex;
+        };
+        
+        window.getLatex = function() {
+            return mf.value;
+        };
+        
+        window.insertLatex = function(latex) {
+            mf.executeCommand(['insert', latex]);
+        };
+        
+        window.clearMathfield = function() {
+            mf.value = '';
+        };
+        
+        // Auto-focus
+        setTimeout(() => mf.focus(), 300);
+    </script>
+</body>
+</html>
+        """.trimIndent()
+    }
+
+    inner class MathLiveInterface {
+        @JavascriptInterface
+        fun onLatexChanged(latex: String) {
+            runOnUiThread {
+                when (activeField) {
+                    0 -> etEquation.setText(latex)
+                    1 -> etX0.setText(latex)
+                    2 -> etY0.setText(latex)
+                }
+                Log.d("MathLive", "LaTeX updated: $latex")
+            }
+        }
     }
 
     private fun updateFieldLabel() {
         when (activeField) {
             0 -> {
                 tvFieldLabel.text = "EDO:"
-                tvFieldLabel.setTextColor(Color.parseColor("#1976D2")) // Azul
+                tvFieldLabel.setTextColor(Color.parseColor("#1976D2"))
             }
             1 -> {
                 tvFieldLabel.text = "Condición inicial x₀:"
-                tvFieldLabel.setTextColor(Color.parseColor("#388E3C")) // Verde
+                tvFieldLabel.setTextColor(Color.parseColor("#388E3C"))
             }
             2 -> {
                 tvFieldLabel.text = "Condición inicial y₀:"
-                tvFieldLabel.setTextColor(Color.parseColor("#D32F2F")) // Rojo
+                tvFieldLabel.setTextColor(Color.parseColor("#D32F2F"))
             }
         }
     }
 
     private fun updatePviButtonLabel() {
         btnPvi.text = when (activeField) {
-            1 -> "PVI: x₀"
-            2 -> "PVI: y₀"
+            1 -> "x₀"
+            2 -> "y₀"
             else -> "PVI"
         }
     }
 
-    private fun currentField(): EditText = when (activeField) {
-        1 -> etX0
-        2 -> etY0
-        else -> etEquation
-    }
-
-    private fun insertText(s: String) {
-        val et = currentField()
-        val start = et.selectionStart.coerceAtLeast(0)
-        val end = et.selectionEnd.coerceAtLeast(0)
-        et.text.replace(minOf(start, end), maxOf(start, end), s, 0, s.length)
-        et.setSelection(minOf(start, end) + s.length)
-        schedulePreview()
-    }
-
-    private fun insertTemplate(before: String, inside: String, after: String) {
-        val et = currentField()
-        val start = et.selectionStart.coerceAtLeast(0)
-        val end = et.selectionEnd.coerceAtLeast(0)
-        val selected = et.text.substring(minOf(start, end), maxOf(start, end))
-        val payload = before + (if (selected.isNotEmpty()) selected else inside) + after
-        et.text.replace(minOf(start, end), maxOf(start, end), payload, 0, payload.length)
-        val cursorPos = minOf(start, end) + before.length +
-                (if (selected.isNotEmpty()) selected.length else inside.length)
-        et.setSelection(cursorPos)
-        schedulePreview()
-    }
-
-    private fun backspace() {
-        val et = currentField()
-        val start = et.selectionStart.coerceAtLeast(0)
-        val end = et.selectionEnd.coerceAtLeast(0)
-        if (start != end) {
-            et.text.delete(minOf(start, end), maxOf(start, end))
-            et.setSelection(minOf(start, end))
-        } else if (start > 0) {
-            et.text.delete(start - 1, start)
-            et.setSelection(start - 1)
+    private fun focusMathLive() {
+        if (!isMathLiveReady) return
+        
+        // Cargar el valor del campo actual en MathLive
+        val currentValue = when (activeField) {
+            1 -> etX0.text.toString()
+            2 -> etY0.text.toString()
+            else -> etEquation.text.toString()
         }
-        schedulePreview()
+        
+        val jsCmd = "setLatex(${jsonString(currentValue)});"
+        wvMathLive.evaluateJavascript(jsCmd, null)
     }
 
     override fun onKeyClicked(id: Int) {
-        when (id) {
-            // y' y''
-            R.id.kb_y1 -> { activeField = 0; updateFieldLabel(); updatePviButtonLabel(); insertText("y'") }
-            R.id.kb_y2 -> { activeField = 0; updateFieldLabel(); updatePviButtonLabel(); insertText("y''") }
+        if (!isMathLiveReady) return
+        
+        val latexToInsert = when (id) {
+            // Derivadas y EDO
+            R.id.kb_y1 -> { activeField = 0; updateFieldLabel(); updatePviButtonLabel(); focusMathLive(); "y'" }
+            R.id.kb_y2 -> { activeField = 0; updateFieldLabel(); updatePviButtonLabel(); focusMathLive(); "y''" }
+            R.id.kb_dydx -> { activeField = 0; updateFieldLabel(); updatePviButtonLabel(); focusMathLive(); "\\frac{dy}{dx}" }
+            R.id.kb_dx -> { activeField = 0; updateFieldLabel(); updatePviButtonLabel(); focusMathLive(); "dx" }
+            R.id.kb_dy -> { activeField = 0; updateFieldLabel(); updatePviButtonLabel(); focusMathLive(); "dy" }
+            R.id.kb_ddx -> { activeField = 0; updateFieldLabel(); updatePviButtonLabel(); focusMathLive(); "\\frac{d}{dx}" }
+            R.id.kb_int -> { activeField = 0; updateFieldLabel(); updatePviButtonLabel(); focusMathLive(); "\\int" }
 
-            // BASIC
-            R.id.kb_0 -> insertText("0")
-            R.id.kb_1 -> insertText("1")
-            R.id.kb_2 -> insertText("2")
-            R.id.kb_3 -> insertText("3")
-            R.id.kb_4 -> insertText("4")
-            R.id.kb_5 -> insertText("5")
-            R.id.kb_6 -> insertText("6")
-            R.id.kb_7 -> insertText("7")
-            R.id.kb_8 -> insertText("8")
-            R.id.kb_9 -> insertText("9")
-
-            R.id.kb_plus -> insertText("+")
-            R.id.kb_minus -> insertText("-")
-            R.id.kb_mul -> insertText("*")
-            R.id.kb_div -> insertText("/")
-            R.id.kb_pow -> insertText("^")
-            R.id.kb_eq -> { activeField = 0; updateFieldLabel(); updatePviButtonLabel(); insertText("=") }
-            R.id.kb_lpar -> insertText("(")
-            R.id.kb_rpar -> insertText(")")
-            R.id.kb_dot -> insertText(".")
+            // Básicos
+            R.id.kb_0 -> "0"
+            R.id.kb_1 -> "1"
+            R.id.kb_2 -> "2"
+            R.id.kb_3 -> "3"
+            R.id.kb_4 -> "4"
+            R.id.kb_5 -> "5"
+            R.id.kb_6 -> "6"
+            R.id.kb_7 -> "7"
+            R.id.kb_8 -> "8"
+            R.id.kb_9 -> "9"
+            R.id.kb_plus -> "+"
+            R.id.kb_minus -> "-"
+            R.id.kb_mul -> "\\cdot"
+            R.id.kb_div -> "/"
+            R.id.kb_pow -> "^{}"
+            R.id.kb_eq -> { activeField = 0; updateFieldLabel(); updatePviButtonLabel(); focusMathLive(); "=" }
+            R.id.kb_lpar -> "("
+            R.id.kb_rpar -> ")"
+            R.id.kb_dot -> "."
+            R.id.kb_frac -> "\\frac{}{}"
+            
+            // Funciones
+            R.id.kb_sin -> "\\sin("
+            R.id.kb_cos -> "\\cos("
+            R.id.kb_tan -> "\\tan("
+            R.id.kb_ln -> "\\ln("
+            R.id.kb_log -> "\\log("
+            R.id.kb_exp -> "e^{}"
+            R.id.kb_sqrt -> "\\sqrt{}"
+            R.id.kb_abs -> "\\left| \\right|"
+            
+            // Constantes y variables
+            R.id.kb_pi -> "\\pi"
+            R.id.kb_e -> "e"
+            R.id.kb_x -> "x"
+            R.id.kb_y -> "y"
+            R.id.kb_t -> "t"
+            R.id.kb_z -> "z"
+            
+            // Símbolos
+            R.id.kb_partial -> "\\partial"
+            R.id.kb_infty -> "\\infty"
+            R.id.kb_leq -> "\\le"
+            R.id.kb_geq -> "\\ge"
+            R.id.kb_neq -> "\\ne"
+            R.id.kb_pm -> "\\pm"
+            
+            // Especiales
+            R.id.kb_back -> { executeJsCommand("mf.executeCommand('deleteBackward')"); return }
+            R.id.kb_clear -> { executeJsCommand("clearMathfield()"); return }
             R.id.kb_comma -> {
                 if (activeField == 1) {
                     activeField = 2
                     updateFieldLabel()
                     updatePviButtonLabel()
-                    schedulePreview()
-                } else insertText(",")
-            }
-
-            R.id.kb_frac -> { insertTemplate("(", "a", ")/("); insertText("b)") }
-            R.id.kb_back -> backspace()
-            R.id.kb_clear -> { val et = currentField(); et.setText(""); et.setSelection(0); schedulePreview() }
-
-            // FUNCS
-            R.id.kb_sin -> insertTemplate("sin(", "x", ")")
-            R.id.kb_cos -> insertTemplate("cos(", "x", ")")
-            R.id.kb_tan -> insertTemplate("tan(", "x", ")")
-            R.id.kb_asin -> insertTemplate("asin(", "x", ")")
-            R.id.kb_acos -> insertTemplate("acos(", "x", ")")
-            R.id.kb_atan -> insertTemplate("atan(", "x", ")")
-            R.id.kb_ln -> insertTemplate("ln(", "x", ")")
-            R.id.kb_log -> insertTemplate("log(", "x", ")")
-            R.id.kb_exp -> insertTemplate("exp(", "x", ")")
-            R.id.kb_sqrt -> insertTemplate("sqrt(", "x", ")")
-            R.id.kb_abs -> insertTemplate("abs(", "x", ")")
-            R.id.kb_fact -> insertText("!")
-            R.id.kb_pi -> insertText("pi")
-            R.id.kb_e -> insertText("e")
-            R.id.kb_x -> insertText("x")
-            R.id.kb_y -> insertText("y")
-            R.id.kb_t -> insertText("t")
-            R.id.kb_z -> insertText("z")
-
-            // CALC/EDO
-            R.id.kb_dydx -> { activeField = 0; updateFieldLabel(); updatePviButtonLabel(); insertText("dy/dx") }
-            R.id.kb_dx -> { activeField = 0; updateFieldLabel(); updatePviButtonLabel(); insertText("dx") }
-            R.id.kb_dy -> { activeField = 0; updateFieldLabel(); updatePviButtonLabel(); insertText("dy") }
-            R.id.kb_int -> { activeField = 0; updateFieldLabel(); updatePviButtonLabel(); insertTemplate("int(", "f(x)", ",x)") }
-            R.id.kb_ddx -> { activeField = 0; updateFieldLabel(); updatePviButtonLabel(); insertTemplate("d/dx(", "f(x)", ")") }
-            R.id.kb_partial -> insertText("∂")
-            R.id.kb_infty -> insertText("∞")
-            R.id.kb_leq -> insertText("<=")
-            R.id.kb_geq -> insertText(">=")
-            R.id.kb_neq -> insertText("!=")
-            R.id.kb_pm -> insertText("+/-")
-        }
-    }
-
-    // -------- Preview --------
-
-    private fun schedulePreview() {
-        previewRunnable?.let { wvPreviewTop.removeCallbacks(it) }
-        previewRunnable = Runnable { renderPreview() }
-        wvPreviewTop.postDelayed(previewRunnable!!, previewDelayMs)
-    }
-
-    private fun renderPreview() {
-        val eq = etEquation.text.toString().trim()
-        val x0 = etX0.text.toString().trim()
-        val y0 = etY0.text.toString().trim()
-
-        val showPvi = (x0.isNotBlank() || y0.isNotBlank() || activeField == 1 || activeField == 2)
-
-        // Mejorar conversión LaTeX para fracciones y potencias
-        val eqLatex = toLatexImproved(if (eq.isBlank()) "\\text{(vacío)}" else eq)
-        val xLatex = toLatexImproved(if (x0.isBlank()) "?" else x0)
-        val yLatex = toLatexImproved(if (y0.isBlank()) "?" else y0)
-
-        val latex = buildString {
-            // EDO principal
-            if (activeField == 0) {
-                append("\\[\\color{blue}{")
-                append(eqLatex)
-                append("}\\,|\\]")
-            } else {
-                append("\\[")
-                append(eqLatex)
-                append("\\]")
+                    focusMathLive()
+                    return
+                } else ","
             }
             
-            // PVI si aplica
-            if (showPvi) {
-                append("\\[")
-                if (activeField == 1) {
-                    append("\\color{green}{x_0=")
-                    append(xLatex)
-                    append("}\\,|")
-                } else {
-                    append("x_0=")
-                    append(xLatex)
-                }
-                append("\\qquad ")
-                if (activeField == 2) {
-                    append("\\color{red}{y_0=")
-                    append(yLatex)
-                    append("}\\,|")
-                } else {
-                    append("y_0=")
-                    append(yLatex)
-                }
-                append("\\]")
-            }
+            else -> return
         }
-
-        val js = """
-            (function(){
-              const tex = ${jsonString(latex)};
-              const el = document.getElementById('math');
-              if (window.MathJax && MathJax.typesetClear) MathJax.typesetClear([el]);
-              el.textContent = tex;
-              if (window.MathJax && MathJax.typesetPromise) MathJax.typesetPromise([el]);
-            })();
-        """.trimIndent()
-
-        wvPreviewTop.evaluateJavascript(js, null)
+        
+        executeJsCommand("insertLatex(${jsonString(latexToInsert)})")
     }
 
-    // -------- Resultado + Toggle pasos --------
-
-    private fun renderResultFromCache() {
-        val sol = lastSolutionLatex
-        if (sol == null) {
-            setResultLatex("\\[\\text{No hay solución aún.}\\]")
-            return
-        }
-        if (!showSteps) {
-            setResultLatex(sol)
-        } else {
-            val steps = lastStepsLatex ?: "\\[\\text{(Sin pasos)}\\]"
-            setResultLatex(sol + "\n" + steps)
-        }
-    }
-
-    private fun setResultLatex(latex: String) {
-        val js = """
-            (function(){
-              const tex = ${jsonString(latex)};
-              const el = document.getElementById('math');
-              if (window.MathJax && MathJax.typesetClear) MathJax.typesetClear([el]);
-              el.textContent = tex;
-              if (window.MathJax && MathJax.typesetPromise) MathJax.typesetPromise([el]);
-            })();
-        """.trimIndent()
-        wvResult.evaluateJavascript(js, null)
+    private fun executeJsCommand(js: String) {
+        wvMathLive.evaluateJavascript(js, null)
     }
 
     // -------- Resolver --------
@@ -387,16 +358,13 @@ class MainActivity : AppCompatActivity(), KeyboardPageFragment.KeyClickListener 
 
         val hasPvi = x0.isNotBlank() || y0.isNotBlank()
 
-        // Reset toggle
         showSteps = false
-        btnToggleSteps.text = "Ver pasos"
         btnToggleSteps.isEnabled = false
         lastSolutionLatex = null
         lastStepsLatex = null
 
         setResultLatex("\\[\\text{Resolviendo...}\\]")
 
-        // Prompt optimizado para sonar-reasoning
         val prompt = buildString {
             appendLine("Resuelve esta EDO y devuelve SOLO LaTeX para MathJax. NO uses bloques de código ni markdown.")
             appendLine("")
@@ -421,7 +389,7 @@ class MainActivity : AppCompatActivity(), KeyboardPageFragment.KeyClickListener 
             appendLine("")
             appendLine("REGLAS IMPORTANTES:")
             appendLine("1. NO uses bloques ```latex```")
-            appendLine("2. NO uses barras invertidas para espaciar (\\). Usa espacios normales")
+            appendLine("2. NO uses barras invertidas para espaciar. Usa espacios normales")
             appendLine("3. TODA la solución debe estar ANTES de <<<PASOS>>>")
             appendLine("4. TODOS los pasos deben estar DESPUÉS de <<<PASOS>>>")
             appendLine("5. Cada paso debe tener descripción y ecuación en líneas separadas")
@@ -447,7 +415,6 @@ class MainActivity : AppCompatActivity(), KeyboardPageFragment.KeyClickListener 
                 }
 
                 val raw = resp.choices.firstOrNull()?.message?.content ?: ""
-                // Limpiar bloques de código y etiquetas think
                 val cleaned = raw
                     .replace(Regex("(?s)<think>.*?</think>\\s*"), "")
                     .replace("```latex", "")
@@ -459,7 +426,7 @@ class MainActivity : AppCompatActivity(), KeyboardPageFragment.KeyClickListener 
                 lastStepsLatex = steps
 
                 btnToggleSteps.isEnabled = true
-                renderResultFromCache()
+                setResultLatex(sol)
 
             } catch (e: HttpException) {
                 btnToggleSteps.isEnabled = false
@@ -493,9 +460,7 @@ class MainActivity : AppCompatActivity(), KeyboardPageFragment.KeyClickListener 
         return Pair(safeSolution, safeSteps)
     }
 
-
-
-    // -------- WebView base MathJax --------
+    // -------- WebView result --------
 
     private fun setupWebView(wv: WebView) {
         wv.settings.javaScriptEnabled = true
@@ -513,7 +478,7 @@ class MainActivity : AppCompatActivity(), KeyboardPageFragment.KeyClickListener 
               <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
               <style> 
                 body { 
-                  font-size: 22px; 
+                  font-size: 20px; 
                   padding: 12px; 
                   margin: 0; 
                   overflow-wrap: break-word;
@@ -533,6 +498,19 @@ class MainActivity : AppCompatActivity(), KeyboardPageFragment.KeyClickListener 
         """.trimIndent()
     }
 
+    private fun setResultLatex(latex: String) {
+        val js = """
+            (function(){
+              const tex = ${jsonString(latex)};
+              const el = document.getElementById('math');
+              if (window.MathJax && MathJax.typesetClear) MathJax.typesetClear([el]);
+              el.textContent = tex;
+              if (window.MathJax && MathJax.typesetPromise) MathJax.typesetPromise([el]);
+            })();
+        """.trimIndent()
+        wvResult.evaluateJavascript(js, null)
+    }
+
     private fun jsonString(s: String): String {
         val sb = StringBuilder()
         sb.append('"')
@@ -548,53 +526,5 @@ class MainActivity : AppCompatActivity(), KeyboardPageFragment.KeyClickListener 
         }
         sb.append('"')
         return sb.toString()
-    }
-
-    private fun toLatexImproved(s: String): String {
-        var result = s
-        
-        // PRIMERO: Manejar exponentes negativos y complejos
-        // e^-x -> e^{-x}
-        result = result.replace(Regex("([a-zA-Z0-9])\\^(-[a-zA-Z0-9]+)")) { m ->
-            "${m.groupValues[1]}^{${m.groupValues[2]}}"
-        }
-        // e^(-x) -> e^{-x}
-        result = result.replace(Regex("([a-zA-Z0-9])\\^\\(([^()]+)\\)")) { m ->
-            "${m.groupValues[1]}^{${m.groupValues[2]}}"
-        }
-        // Potencias simples: x^2 -> x^{2}
-        result = result.replace(Regex("([a-zA-Z0-9])\\^([0-9])")) { m ->
-            "${m.groupValues[1]}^{${m.groupValues[2]}}"
-        }
-        
-        // FRACCIONES: Manejar múltiples formatos
-        // (a)/(b) -> \frac{a}{b}
-        result = result.replace(Regex("\\(([^()]+)\\)/\\(([^()]+)\\)")) { m ->
-            "\\frac{${m.groupValues[1]}}{${m.groupValues[2]}}"
-        }
-        // a/b donde a y b son números o variables simples -> \frac{a}{b}
-        result = result.replace(Regex("([0-9a-zA-Z]+)/([0-9a-zA-Z]+)")) { m ->
-            "\\frac{${m.groupValues[1]}}{${m.groupValues[2]}}"
-        }
-        
-        // Derivadas
-        result = result.replace("y''", "y^{\\prime\\prime}")
-        result = result.replace("y'", "y^{\\prime}")
-        result = result.replace("dy/dx", "\\frac{dy}{dx}")
-        
-        // Constantes
-        result = result.replace("pi", "\\pi")
-        
-        // Operadores
-        result = result.replace("*", "\\cdot ")
-        result = result.replace("<=", "\\le ")
-        result = result.replace(">=", "\\ge ")
-        result = result.replace("!=", "\\ne ")
-        result = result.replace("+/-", "\\pm ")
-        
-        // Funciones
-        result = result.replace(Regex("""sqrt\\(([^()]*)\\)""")) { m -> "\\sqrt{${m.groupValues[1]}}" }
-        
-        return result
     }
 }

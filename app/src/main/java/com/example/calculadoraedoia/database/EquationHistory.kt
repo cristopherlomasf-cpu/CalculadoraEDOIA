@@ -10,6 +10,7 @@ data class EquationHistory(
     val equation: String,
     val x0: String?,
     val y0: String?,
+    val yPrime0: String?,  // Condición inicial para y'
     val solution: String,
     val steps: String,
     val timestamp: Long = System.currentTimeMillis()

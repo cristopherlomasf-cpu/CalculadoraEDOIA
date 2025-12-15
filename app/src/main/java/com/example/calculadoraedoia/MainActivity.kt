@@ -553,13 +553,27 @@ class MainActivity : AppCompatActivity(), KeyboardPageFragment.KeyClickListener 
     private fun toLatexImproved(s: String): String {
         var result = s
         
-        // Convertir potencias simples: x^2 -> x^{2}, pero x^(2+3) mantenerlo
+        // PRIMERO: Manejar exponentes negativos y complejos
+        // e^-x -> e^{-x}
+        result = result.replace(Regex("([a-zA-Z0-9])\\^(-[a-zA-Z0-9]+)")) { m ->
+            "${m.groupValues[1]}^{${m.groupValues[2]}}"
+        }
+        // e^(-x) -> e^{-x}
+        result = result.replace(Regex("([a-zA-Z0-9])\\^\\(([^()]+)\\)")) { m ->
+            "${m.groupValues[1]}^{${m.groupValues[2]}}"
+        }
+        // Potencias simples: x^2 -> x^{2}
         result = result.replace(Regex("([a-zA-Z0-9])\\^([0-9])")) { m ->
             "${m.groupValues[1]}^{${m.groupValues[2]}}"
         }
         
-        // Convertir fracciones simples: (a)/(b) -> \frac{a}{b}
+        // FRACCIONES: Manejar múltiples formatos
+        // (a)/(b) -> \frac{a}{b}
         result = result.replace(Regex("\\(([^()]+)\\)/\\(([^()]+)\\)")) { m ->
+            "\\frac{${m.groupValues[1]}}{${m.groupValues[2]}}"
+        }
+        // a/b donde a y b son números o variables simples -> \frac{a}{b}
+        result = result.replace(Regex("([0-9a-zA-Z]+)/([0-9a-zA-Z]+)")) { m ->
             "\\frac{${m.groupValues[1]}}{${m.groupValues[2]}}"
         }
         
@@ -570,7 +584,6 @@ class MainActivity : AppCompatActivity(), KeyboardPageFragment.KeyClickListener 
         
         // Constantes
         result = result.replace("pi", "\\pi")
-        result = result.replace("e", "e")
         
         // Operadores
         result = result.replace("*", "\\cdot ")

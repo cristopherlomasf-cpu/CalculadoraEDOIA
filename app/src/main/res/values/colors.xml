@@ -11,4 +11,12 @@
     <!-- Light theme colors -->
     <color name="background_light">#FAFAFA</color>
     <color name="surface_light">#FFFFFF</color>
+    
+    <!-- Keyboard button colors -->
+    <color name="key_num_bg">#F5F5F5</color>
+    <color name="key_num_text">#212121</color>
+    <color name="key_op_bg">#E3F2FD</color>
+    <color name="key_op_text">#1976D2</color>
+    <color name="key_var_bg">#E8F5E9</color>
+    <color name="key_var_text">#388E3C</color>
 </resources>

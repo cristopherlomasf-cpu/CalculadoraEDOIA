@@ -12,4 +12,12 @@
     <color name="background_dark">#121212</color>
     <color name="surface_dark">#1E1E1E</color>
     <color name="card_dark">#2C2C2C</color>
+    
+    <!-- Keyboard button colors (dark mode) -->
+    <color name="key_num_bg">#2C2C2C</color>
+    <color name="key_num_text">#E0E0E0</color>
+    <color name="key_op_bg">#1565C0</color>
+    <color name="key_op_text">#E3F2FD</color>
+    <color name="key_var_bg">#2E7D32</color>
+    <color name="key_var_text">#E8F5E9</color>
 </resources>

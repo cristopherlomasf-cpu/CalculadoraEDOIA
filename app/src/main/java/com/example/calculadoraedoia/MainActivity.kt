@@ -346,29 +346,32 @@ class MainActivity : AppCompatActivity(), KeyboardPageFragment.KeyClickListener 
 
         setResultLatex("\\[\\text{Resolviendo...}\\]")
 
-        // Prompt mejorado y simplificado
+        // Prompt mejorado con formato vertical
         val prompt = buildString {
-            appendLine("Resuelve esta EDO y devuelve SOLO LaTeX para MathJax.")
+            appendLine("Resuelve esta EDO y devuelve SOLO LaTeX para MathJax. NO uses bloques de código (```latex).")
             appendLine("")
             appendLine("FORMATO OBLIGATORIO:")
             appendLine("Parte 1 - SOLUCIÓN:")
             appendLine("\\[\\textbf{SOLUCION}\\]")
             appendLine("\\[\\textbf{TIPO:}\\ \\text{tipo de EDO}\\]")
-            appendLine("\\[\\text{Solución final}\\]")
+            appendLine("\\[y = \\text{solución final}\\]")
             appendLine("")
             appendLine("<<<PASOS>>>")
             appendLine("")
-            appendLine("Parte 2 - PASOS:")
+            appendLine("Parte 2 - PASOS (cada paso en su propia línea \\[...\\]):")
             appendLine("\\[\\textbf{PASOS}\\]")
             appendLine("\\[\\textbf{METODO:}\\ \\text{método usado}\\]")
-            appendLine("\\[\\text{Paso 1: Explicación breve}\\ \\Rightarrow\\ \\text{ecuación}\\]")
-            appendLine("\\[\\text{Paso 2: Explicación breve}\\ \\Rightarrow\\ \\text{ecuación}\\]")
-            appendLine("\\[\\text{Paso 3: Explicación breve}\\ \\Rightarrow\\ \\text{ecuación}\\]")
-            appendLine("(continúa hasta resolver completamente)")
+            appendLine("\\[\\text{Paso 1: Breve descripción}\\]")
+            appendLine("\\[ecuación \\ o \\ resultado \\ del \\ paso \\ 1\\]")
+            appendLine("\\[\\text{Paso 2: Breve descripción}\\]")
+            appendLine("\\[ecuación \\ o \\ resultado \\ del \\ paso \\ 2\\]")
+            appendLine("(continúa con más pasos hasta resolver)")
             appendLine("")
             appendLine("REGLAS:")
-            appendLine("- Cada paso debe estar en una sola línea \\[...\\]")
-            appendLine("- Mantén las explicaciones cortas (máximo 10 palabras)")
+            appendLine("- NUNCA uses bloques de código ```latex")
+            appendLine("- Cada paso debe tener 2 líneas: descripción y ecuación")
+            appendLine("- Cada línea debe estar en su propio \\[...\\]")
+            appendLine("- Usa espacios \\ entre palabras largas para evitar desbordamiento")
             appendLine("- Si no puedes resolver, deja en función de C")
             appendLine("")
             appendLine("EDO: $equation")
@@ -382,7 +385,7 @@ class MainActivity : AppCompatActivity(), KeyboardPageFragment.KeyClickListener 
                         PplxRequest(
                             model = "sonar-pro",
                             messages = listOf(
-                                PplxMessage("system", "Devuelve únicamente LaTeX válido para MathJax."),
+                                PplxMessage("system", "Devuelve únicamente LaTeX válido para MathJax. NO uses bloques de código."),
                                 PplxMessage("user", prompt)
                             ),
                             temperature = 0.2
@@ -391,7 +394,12 @@ class MainActivity : AppCompatActivity(), KeyboardPageFragment.KeyClickListener 
                 }
 
                 val raw = resp.choices.firstOrNull()?.message?.content ?: ""
-                val cleaned = raw.replace(Regex("(?s)<think>.*?</think>\\s*"), "").trim()
+                // Limpiar bloques de código y etiquetas think
+                val cleaned = raw
+                    .replace(Regex("(?s)<think>.*?</think>\\s*"), "")
+                    .replace("```latex", "")
+                    .replace("```", "")
+                    .trim()
 
                 val (sol, steps) = splitSolutionSteps(cleaned)
                 lastSolutionLatex = sol
@@ -448,7 +456,15 @@ class MainActivity : AppCompatActivity(), KeyboardPageFragment.KeyClickListener 
             <head>
               <meta charset="utf-8"/>
               <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-              <style> body { font-size: 18px; padding: 8px; margin: 0; } </style>
+              <style> 
+                body { 
+                  font-size: 18px; 
+                  padding: 8px; 
+                  margin: 0; 
+                  overflow-wrap: break-word;
+                  word-wrap: break-word;
+                } 
+              </style>
               <script>
                 window.MathJax = { tex: { inlineMath: [['\\\(','\\\)']], displayMath: [['\\\[','\\\]']] } };
               </script>

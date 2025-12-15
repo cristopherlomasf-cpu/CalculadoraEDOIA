@@ -17,7 +17,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content">
 
-            <!-- EDITOR MATHLIVE - Máximo espacio 450dp -->
+            <!-- EDITOR MATHLIVE - Maximo espacio 450dp -->
             <androidx.cardview.widget.CardView
                 android:layout_width="match_parent"
                 android:layout_height="450dp"
@@ -55,7 +55,7 @@
 
             </androidx.cardview.widget.CardView>
 
-            <!-- Botón PVI -->
+            <!-- Boton PVI -->
             <Button
                 android:id="@+id/btnPvi"
                 android:layout_width="match_parent"
@@ -101,7 +101,7 @@
                     android:hint="y0"/>
             </LinearLayout>
 
-            <!-- BOTONES DE ACCIÓN -->
+            <!-- BOTONES DE ACCION -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -136,6 +136,7 @@
             <androidx.cardview.widget.CardView
                 android:layout_width="match_parent"
                 android:layout_height="250dp"
+                android:layout_marginBottom="80dp"
                 app:cardCornerRadius="12dp"
                 app:cardElevation="2dp"
                 app:cardBackgroundColor="#FFFFFF">
@@ -151,5 +152,16 @@
         </LinearLayout>
 
     </ScrollView>
+
+    <!-- Boton flotante de camara -->
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/fabCamera"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|end"
+        android:layout_margin="16dp"
+        android:contentDescription="Escanear ecuacion"
+        android:src="@android:drawable/ic_menu_camera"
+        app:tint="#FFFFFF" />
 
 </FrameLayout>

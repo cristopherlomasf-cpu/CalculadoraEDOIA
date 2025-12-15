@@ -163,12 +163,13 @@ class MainActivity : AppCompatActivity() {
         
         const mf = document.getElementById('mathfield');
         
-        // Configurar teclado virtual con mejor tamaño
+        // Configurar teclado virtual - PESTAÑA EDO PRIMERO
         mf.setOptions({
             virtualKeyboardMode: 'onfocus',
-            virtualKeyboards: 'numeric functions symbols greek',
             
-            // Hacer el teclado más grande
+            // IMPORTANTE: EDO primero, luego numérico, funciones y símbolos
+            virtualKeyboards: 'edo numeric functions symbols',
+            
             keypressSound: null,
             plonkSound: null,
             
@@ -177,27 +178,43 @@ class MainActivity : AppCompatActivity() {
                     label: 'EDO',
                     tooltip: 'Ecuaciones Diferenciales',
                     rows: [
+                        // Fila 1: Derivadas (lo más usado)
                         [
                             { latex: "y'", label: "<span style='font-size:24px'>y'</span>", class: 'action' },
                             { latex: "y''", label: "<span style='font-size:24px'>y''</span>", class: 'action' },
-                            { latex: '\\\\frac{dy}{dx}', label: "<span style='font-size:18px'>dy/dx</span>", class: 'small' },
-                            { latex: '\\\\frac{d^2y}{dx^2}', label: "<span style='font-size:16px'>d²y/dx²</span>", class: 'small' },
+                            { latex: '\\\\frac{dy}{dx}', label: "<span style='font-size:18px'>dy/dx</span>" },
+                            { latex: 'x', label: "<span style='font-size:24px'>x</span>" },
+                            { latex: 'y', label: "<span style='font-size:24px'>y</span>" },
                         ],
+                        // Fila 2: Operadores comunes
+                        [
+                            { latex: '+', label: "<span style='font-size:28px'>+</span>" },
+                            { latex: '-', label: "<span style='font-size:28px'>−</span>" },
+                            { latex: '\\\\cdot', label: "<span style='font-size:24px'>×</span>" },
+                            { latex: '/', label: "<span style='font-size:28px'>÷</span>" },
+                            { latex: '=', label: "<span style='font-size:24px'>=</span>" },
+                        ],
+                        // Fila 3: Exponenciales y funciones
+                        [
+                            { latex: 'e^{#?}', label: "<span style='font-size:22px'>eˣ</span>" },
+                            { latex: '^{#?}', label: "<span style='font-size:20px'>xⁿ</span>" },
+                            { latex: '\\\\sin(#?)', label: "<span style='font-size:20px'>sin</span>" },
+                            { latex: '\\\\cos(#?)', label: "<span style='font-size:20px'>cos</span>" },
+                            { latex: '\\\\ln(#?)', label: "<span style='font-size:20px'>ln</span>" },
+                        ],
+                        // Fila 4: Integrales y símbolos especiales
                         [
                             { latex: '\\\\int', label: "<span style='font-size:28px'>∫</span>" },
                             { latex: '\\\\partial', label: "<span style='font-size:24px'>∂</span>" },
-                            { latex: 'e^{#?}', label: "<span style='font-size:22px'>eˣ</span>" },
+                            { latex: '\\\\frac{#?}{#?}', label: "<span style='font-size:20px'>a/b</span>" },
+                            { latex: '\\\\sqrt{#?}', label: "<span style='font-size:24px'>√</span>" },
                             { latex: '\\\\infty', label: "<span style='font-size:24px'>∞</span>" },
-                        ],
-                        [
-                            { latex: '\\\\sin(#?)', label: "<span style='font-size:20px'>sin</span>" },
-                            { latex: '\\\\cos(#?)', label: "<span style='font-size:20px'>cos</span>" },
-                            { latex: '\\\\tan(#?)', label: "<span style='font-size:20px'>tan</span>" },
-                            { latex: '\\\\ln(#?)', label: "<span style='font-size:20px'>ln</span>" },
                         ]
                     ]
                 }
             },
+            
+            // Orden: EDO es el primero que se muestra
             virtualKeyboardLayout: 'edo numeric functions symbols'
         });
         

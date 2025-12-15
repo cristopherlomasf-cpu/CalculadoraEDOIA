@@ -158,12 +158,71 @@ class MainActivity : AppCompatActivity() {
         
         const mf = document.getElementById('mathfield');
         
-        // SIN TECLADO VIRTUAL - solo editor visual
+        // TECLADO VIRTUAL PERSONALIZADO PARA EDO
         mf.setOptions({
-            virtualKeyboardMode: 'off',
+            virtualKeyboardMode: 'manual',
             keypressSound: null,
             plonkSound: null,
+            customVirtualKeyboardLayers: {
+                'edo-layer': {
+                    styles: '',
+                    rows: [
+                        [
+                            { label: "y'", latex: "y'" },
+                            { label: "y''", latex: "y''" },
+                            { label: 'dy/dx', latex: '\\\\frac{dy}{dx}' },
+                            { label: 'x', latex: 'x' },
+                            { label: 'y', latex: 'y' },
+                            { label: '(', latex: '(' },
+                            { label: ')', latex: ')' },
+                        ],
+                        [
+                            { label: '7', latex: '7' },
+                            { label: '8', latex: '8' },
+                            { label: '9', latex: '9' },
+                            { label: '+', latex: '+' },
+                            { label: '−', latex: '-' },
+                            { class: 'action', label: '<svg><use xlink:href="#svg-arrow-left" /></svg>', command: ['performWithFeedback', 'deleteBackward'] },
+                        ],
+                        [
+                            { label: '4', latex: '4' },
+                            { label: '5', latex: '5' },
+                            { label: '6', latex: '6' },
+                            { label: '×', latex: '\\\\times' },
+                            { label: '÷', latex: '\\\\div' },
+                            { class: 'action', label: 'CLR', command: ['performWithFeedback', 'deleteAll'] },
+                        ],
+                        [
+                            { label: '1', latex: '1' },
+                            { label: '2', latex: '2' },
+                            { label: '3', latex: '3' },
+                            { label: 'x^y', latex: '^' },
+                            { label: 'e^x', latex: 'e^{#?}' },
+                            { label: '=', latex: '=' },
+                        ],
+                        [
+                            { label: '0', latex: '0' },
+                            { label: '.', latex: '.' },
+                            { label: 'ln', latex: '\\\\ln' },
+                            { label: 'sin', latex: '\\\\sin' },
+                            { label: 'cos', latex: '\\\\cos' },
+                            { label: 'a/b', latex: '\\\\frac{#?}{#?}' },
+                        ],
+                    ]
+                }
+            },
+            customVirtualKeyboards: {
+                'edo-keyboard': {
+                    label: 'EDO',
+                    tooltip: 'Teclado para EDO',
+                    layer: 'edo-layer'
+                }
+            },
+            virtualKeyboards: 'edo-keyboard'
         });
+        
+        // Mostrar teclado automáticamente
+        mf.executeCommand('showVirtualKeyboard');
         
         // Notificar a Android cuando cambia el contenido
         mf.addEventListener('input', () => {
@@ -400,7 +459,7 @@ class MainActivity : AppCompatActivity() {
                 } 
               </style>
               <script>
-                window.MathJax = { tex: { inlineMath: [['\\\(','\\\)']], displayMath: [['\\\[','\\\]']] } };
+                window.MathJax = { tex: { inlineMath: [['\\(','\\']], displayMath: [['\\[','\\]']] } };
               </script>
               <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
             </head>

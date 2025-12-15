@@ -23,6 +23,9 @@ android {
         buildConfigField("String", "MATHPIX_APP_ID", "\"$mathpixKey\"")
         buildConfigField("String", "MATHPIX_APP_KEY", "\"$mathpixSecret\"")
         
+        val visionKey = gradleLocalProperties(rootDir, providers).getProperty("GOOGLE_VISION_API_KEY") ?: ""
+        buildConfigField("String", "GOOGLE_VISION_API_KEY", "\"$visionKey\"")
+        
         applicationId = "com.example.calculadoraedoia"
         minSdk = 26
         targetSdk = 35
@@ -74,6 +77,9 @@ dependencies {
     implementation("com.squareup.retrofit2:converter-gson:2.11.0")
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1")
+    
+    // JSON
+    implementation("com.google.code.gson:gson:2.10.1")
     
     // Room Database
     implementation(libs.androidx.room.runtime)

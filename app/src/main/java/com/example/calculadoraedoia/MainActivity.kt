@@ -42,6 +42,7 @@ class MainActivity : AppCompatActivity() {
     private var lastStepsLatex: String? = null
 
     private var isMathLiveReady = false
+    private var isResultWebViewReady = false  // NUEVO: flag para el WebView de resultados
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -91,7 +92,7 @@ class MainActivity : AppCompatActivity() {
         updateFieldLabel()
         updatePviButtonLabel()
         btnToggleSteps.isEnabled = false
-        setResultLatex("\\[\\text{Presiona Resolver.}\\]")
+        // NO llamar a setResultLatex aquí, esperar a que el WebView esté listo
     }
 
     @SuppressLint("SetJavaScriptEnabled")
@@ -334,7 +335,7 @@ class MainActivity : AppCompatActivity() {
 
         setResultLatex("\\[\\text{Resolviendo...}\\]")
 
-        // PROMPT MEJORADO CON ÉNFASIS EN PRECISIÓN
+        // PROMPT MEJORADO (MÁS CORTO Y DIRECTO)
         val prompt = buildString {
             appendLine("Resuelve esta EDO PASO A PASO con PRECISIÓN MATEMÁTICA. Devuelve solo LaTeX.")
             appendLine("")
@@ -424,7 +425,15 @@ class MainActivity : AppCompatActivity() {
     private fun setupWebView(wv: WebView) {
         wv.settings.javaScriptEnabled = true
         wv.settings.domStorageEnabled = true
-        wv.webViewClient = WebViewClient()
+        wv.webViewClient = object : WebViewClient() {
+            override fun onPageFinished(view: WebView?, url: String?) {
+                super.onPageFinished(view, url)
+                isResultWebViewReady = true
+                Log.d("ResultWebView", "Ready")
+                // Establecer mensaje inicial DESPUÉS de que esté listo
+                setResultLatex("\\[\\text{Presiona Resolver.}\\]")
+            }
+        }
         wv.loadDataWithBaseURL("https://cdn.jsdelivr.net/", baseMathJaxHtml(), "text/html", "utf-8", null)
     }
 
@@ -458,10 +467,20 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun setResultLatex(latex: String) {
+        // IMPORTANTE: Solo ejecutar si el WebView está listo
+        if (!isResultWebViewReady) {
+            Log.w("ResultWebView", "Not ready yet, skipping setResultLatex")
+            return
+        }
+        
         val js = """
             (function(){
               const tex = ${jsonString(latex)};
               const el = document.getElementById('math');
+              if (!el) {
+                console.error('Element #math not found');
+                return;
+              }
               if (window.MathJax && MathJax.typesetClear) MathJax.typesetClear([el]);
               el.textContent = tex;
               if (window.MathJax && MathJax.typesetPromise) MathJax.typesetPromise([el]);

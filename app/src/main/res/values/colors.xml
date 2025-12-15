@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFFFF</color>
+    <!-- Variables (x, y, t, pi, e) -->
+    <color name="key_var_bg">#E8F1FF</color>
+    <color name="key_var_text">#0B3D91</color>
+
+    <!-- Operadores (+, -, =, *, /, ^, paréntesis, dy/dx, y′, y″) -->
+    <color name="key_op_bg">#F3E8FF</color>
+    <color name="key_op_text">#4A148C</color>
+
+    <!-- Números -->
+    <color name="key_num_bg">#F5F5F5</color>
+    <color name="key_num_text">#1C1C1C</color>
+</resources>

@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<GridLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:columnCount="6"
+    android:useDefaultMargins="true">
+
+    <com.google.android.material.button.MaterialButton android:id="@+id/kb_sin" style="@style/KeyButtonOp" android:layout_columnWeight="1" android:text="sin"/>
+    <com.google.android.material.button.MaterialButton android:id="@+id/kb_cos" style="@style/KeyButtonOp" android:layout_columnWeight="1" android:text="cos"/>
+    <com.google.android.material.button.MaterialButton android:id="@+id/kb_tan" style="@style/KeyButtonOp" android:layout_columnWeight="1" android:text="tan"/>
+    <com.google.android.material.button.MaterialButton android:id="@+id/kb_asin" style="@style/KeyButtonOp" android:layout_columnWeight="1" android:text="asin"/>
+    <com.google.android.material.button.MaterialButton android:id="@+id/kb_acos" style="@style/KeyButtonOp" android:layout_columnWeight="1" android:text="acos"/>
+    <com.google.android.material.button.MaterialButton android:id="@+id/kb_atan" style="@style/KeyButtonOp" android:layout_columnWeight="1" android:text="atan"/>
+
+    <com.google.android.material.button.MaterialButton android:id="@+id/kb_ln" style="@style/KeyButtonOp" android:layout_columnWeight="1" android:text="ln"/>
+    <com.google.android.material.button.MaterialButton android:id="@+id/kb_log" style="@style/KeyButtonOp" android:layout_columnWeight="1" android:text="log"/>
+    <com.google.android.material.button.MaterialButton android:id="@+id/kb_exp" style="@style/KeyButtonOp" android:layout_columnWeight="1" android:text="exp"/>
+    <com.google.android.material.button.MaterialButton android:id="@+id/kb_sqrt" style="@style/KeyButtonOp" android:layout_columnWeight="1" android:text="√"/>
+    <com.google.android.material.button.MaterialButton android:id="@+id/kb_abs" style="@style/KeyButtonOp" android:layout_columnWeight="1" android:text="abs"/>
+    <com.google.android.material.button.MaterialButton android:id="@+id/kb_fact" style="@style/KeyButtonOp" android:layout_columnWeight="1" android:text="!"/>
+
+    <com.google.android.material.button.MaterialButton android:id="@+id/kb_pi" style="@style/KeyButtonVar" android:layout_columnWeight="1" android:text="π"/>
+    <com.google.android.material.button.MaterialButton android:id="@+id/kb_e"  style="@style/KeyButtonVar" android:layout_columnWeight="1" android:text="e"/>
+    <com.google.android.material.button.MaterialButton android:id="@+id/kb_x"  style="@style/KeyButtonVar" android:layout_columnWeight="1" android:text="x"/>
+    <com.google.android.material.button.MaterialButton android:id="@+id/kb_y"  style="@style/KeyButtonVar" android:layout_columnWeight="1" android:text="y"/>
+    <com.google.android.material.button.MaterialButton android:id="@+id/kb_t"  style="@style/KeyButtonVar" android:layout_columnWeight="1" android:text="t"/>
+    <com.google.android.material.button.MaterialButton android:id="@+id/kb_z"  style="@style/KeyButtonVar" android:layout_columnWeight="1" android:text="z"/>
+
+</GridLayout>

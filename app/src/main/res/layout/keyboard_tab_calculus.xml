@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<GridLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:columnCount="6"
+    android:useDefaultMargins="true">
+
+    <com.google.android.material.button.MaterialButton android:id="@+id/kb_y1" style="@style/KeyButtonOp" android:layout_columnWeight="1" android:text="y′"/>
+    <com.google.android.material.button.MaterialButton android:id="@+id/kb_y2" style="@style/KeyButtonOp" android:layout_columnWeight="1" android:text="y″"/>
+    <com.google.android.material.button.MaterialButton android:id="@+id/kb_dydx" style="@style/KeyButtonOp" android:layout_columnWeight="2" android:text="dy/dx"/>
+    <com.google.android.material.button.MaterialButton android:id="@+id/kb_dx" style="@style/KeyButtonOp" android:layout_columnWeight="1" android:text="dx"/>
+    <com.google.android.material.button.MaterialButton android:id="@+id/kb_dy" style="@style/KeyButtonOp" android:layout_columnWeight="1" android:text="dy"/>
+
+    <com.google.android.material.button.MaterialButton android:id="@+id/kb_int" style="@style/KeyButtonOp" android:layout_columnWeight="1" android:text="∫"/>
+    <com.google.android.material.button.MaterialButton android:id="@+id/kb_ddx" style="@style/KeyButtonOp" android:layout_columnWeight="1" android:text="d/dx"/>
+    <com.google.android.material.button.MaterialButton android:id="@+id/kb_partial" style="@style/KeyButtonOp" android:layout_columnWeight="1" android:text="∂"/>
+    <com.google.android.material.button.MaterialButton android:id="@+id/kb_infty" style="@style/KeyButtonOp" android:layout_columnWeight="1" android:text="∞"/>
+    <com.google.android.material.button.MaterialButton android:id="@+id/kb_leq" style="@style/KeyButtonOp" android:layout_columnWeight="1" android:text="≤"/>
+    <com.google.android.material.button.MaterialButton android:id="@+id/kb_geq" style="@style/KeyButtonOp" android:layout_columnWeight="1" android:text="≥"/>
+
+    <com.google.android.material.button.MaterialButton android:id="@+id/kb_neq" style="@style/KeyButtonOp" android:layout_columnWeight="1" android:text="≠"/>
+    <com.google.android.material.button.MaterialButton android:id="@+id/kb_pm" style="@style/KeyButtonOp" android:layout_columnWeight="1" android:text="±"/>
+</GridLayout>

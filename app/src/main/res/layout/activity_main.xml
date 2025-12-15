@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <LinearLayout
+        android:id="@+id/contentRoot"
+        android:orientation="vertical"
+        android:padding="12dp"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <!-- PREVIEW (arriba) -->
+        <WebView
+            android:id="@+id/wvPreviewTop"
+            android:layout_width="match_parent"
+            android:layout_height="110dp" />
+
+        <!-- Inputs invisibles (solo backing store) -->
+        <EditText
+            android:id="@+id/etEquation"
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:alpha="0"
+            android:cursorVisible="false"
+            android:importantForAutofill="no"
+            android:hint="EDO"/>
+
+        <!-- PVI separado en 2 valores -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:alpha="0"
+            android:orientation="horizontal">
+
+            <EditText
+                android:id="@+id/etX0"
+                android:layout_width="0dp"
+                android:layout_height="1dp"
+                android:layout_weight="1"
+                android:cursorVisible="false"
+                android:importantForAutofill="no"
+                android:hint="x0"/>
+
+            <EditText
+                android:id="@+id/etY0"
+                android:layout_width="0dp"
+                android:layout_height="1dp"
+                android:layout_weight="1"
+                android:cursorVisible="false"
+                android:importantForAutofill="no"
+                android:hint="y0"/>
+        </LinearLayout>
+
+        <com.google.android.material.tabs.TabLayout
+            android:id="@+id/tabKeyboard"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            app:tabMode="fixed"
+            app:tabIndicatorFullWidth="false"/>
+
+        <androidx.viewpager2.widget.ViewPager2
+            android:id="@+id/vpKeyboard"
+            android:layout_width="match_parent"
+            android:layout_height="260dp"/>
+        <Button
+            android:id="@+id/btnPvi"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="PVI"
+            android:layout_marginTop="8dp"/>
+
+        <Button
+            android:id="@+id/btnSolve"
+            android:text="Resolver"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"/>
+        <Button
+            android:id="@+id/btnToggleSteps"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Ver pasos"
+            android:layout_marginTop="8dp"/>
+
+        <WebView
+            android:id="@+id/wvLatexResult"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:layout_marginTop="10dp"/>
+    </LinearLayout>
+
+</FrameLayout>

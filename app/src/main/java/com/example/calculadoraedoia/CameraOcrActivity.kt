@@ -53,6 +53,15 @@ class CameraOcrActivity : AppCompatActivity() {
     private lateinit var cameraExecutor: ExecutorService
 
     private val mlKitRecognizer = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)
+    
+    // Google Vision API
+    private val googleVisionApi by lazy {
+        if (BuildConfig.GOOGLE_VISION_API_KEY.isNotBlank()) {
+            GoogleVisionClient.create(BuildConfig.GOOGLE_VISION_API_KEY)
+        } else null
+    }
+    
+    // Mathpix (opcional)
     private val mathpixApi by lazy {
         if (BuildConfig.MATHPIX_APP_ID.isNotBlank()) {
             MathpixClient.create(BuildConfig.MATHPIX_APP_ID, BuildConfig.MATHPIX_APP_KEY)
@@ -95,16 +104,23 @@ class CameraOcrActivity : AppCompatActivity() {
 
         cameraExecutor = Executors.newSingleThreadExecutor()
 
-        // Configurar Mathpix
+        // Configurar switch (ahora es Google Vision vs ML Kit)
+        val hasGoogleVision = BuildConfig.GOOGLE_VISION_API_KEY.isNotBlank()
         val hasMathpix = BuildConfig.MATHPIX_APP_ID.isNotBlank()
-        switchMathpix.isChecked = hasMathpix
-        switchMathpix.isEnabled = hasMathpix
         
-        if (!hasMathpix) {
+        if (hasGoogleVision || hasMathpix) {
+            switchMathpix.isChecked = true
+            switchMathpix.isEnabled = true
+            // Cambiar texto del switch
+            findViewById<TextView>(R.id.tvProcessing)?.parent?.let {
+                // El switch ahora representa "OCR Premium" (Google Vision o Mathpix)
+            }
+        } else {
+            switchMathpix.isChecked = false
             switchMathpix.visibility = View.GONE
             Toast.makeText(
                 this,
-                "⚠️ Sin Mathpix. ML Kit detecta texto básico, no ecuaciones complejas.",
+                "⚠️ Usando ML Kit básico. Agrega Google Vision API key para mejor detección.",
                 Toast.LENGTH_LONG
             ).show()
         }
@@ -237,12 +253,20 @@ class CameraOcrActivity : AppCompatActivity() {
         
         val processedBitmap = preprocessImage(bitmap)
         
-        if (switchMathpix.isChecked && mathpixApi != null) {
-            tvProcessing.text = "🔍 Analizando con Mathpix..."
-            processMathpix(processedBitmap)
-        } else {
-            tvProcessing.text = "🔍 Detectando texto..."
-            processMLKit(processedBitmap)
+        // Prioridad: Mathpix > Google Vision > ML Kit
+        when {
+            switchMathpix.isChecked && mathpixApi != null -> {
+                tvProcessing.text = "🔍 Analizando con Mathpix PRO..."
+                processMathpix(processedBitmap)
+            }
+            switchMathpix.isChecked && googleVisionApi != null -> {
+                tvProcessing.text = "🔍 Analizando con Google Vision..."
+                processGoogleVision(processedBitmap)
+            }
+            else -> {
+                tvProcessing.text = "🔍 Detectando con ML Kit..."
+                processMLKit(processedBitmap)
+            }
         }
     }
 
@@ -266,6 +290,54 @@ class CameraOcrActivity : AppCompatActivity() {
         }
     }
 
+    private fun processGoogleVision(bitmap: Bitmap) {
+        CoroutineScope(Dispatchers.Main).launch {
+            try {
+                val base64 = bitmapToBase64(bitmap)
+                
+                val request = VisionRequest(
+                    requests = listOf(
+                        AnnotateImageRequest(
+                            image = Image(content = base64),
+                            features = listOf(
+                                Feature(type = "TEXT_DETECTION", maxResults = 1)
+                            )
+                        )
+                    )
+                )
+                
+                val response = withContext(Dispatchers.IO) {
+                    googleVisionApi!!.annotateImage(BuildConfig.GOOGLE_VISION_API_KEY, request)
+                }
+
+                val firstResponse = response.responses.firstOrNull()
+                
+                if (firstResponse?.error != null) {
+                    Log.e("GoogleVision", "Error: ${firstResponse.error.message}")
+                    showError("❌ Google Vision: ${firstResponse.error.message}")
+                } else {
+                    val text = firstResponse?.textAnnotations?.firstOrNull()?.description 
+                        ?: firstResponse?.fullTextAnnotation?.text 
+                        ?: ""
+                    
+                    Log.d("GoogleVision", "Detected text: $text")
+                    
+                    if (text.isBlank()) {
+                        showErrorWithManualOption("No se detectó texto")
+                    } else {
+                        val latex = improvedTextToLatex(text)
+                        showConfirmationDialog(latex, text)
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e("GoogleVision", "Exception", e)
+                // Fallback a ML Kit
+                tvProcessing.text = "🔍 Error Google Vision, usando ML Kit..."
+                processMLKit(bitmap)
+            }
+        }
+    }
+
     private fun processMathpix(bitmap: Bitmap) {
         CoroutineScope(Dispatchers.Main).launch {
             try {
@@ -281,7 +353,14 @@ class CameraOcrActivity : AppCompatActivity() {
 
                 if (response.error != null) {
                     Log.e("Mathpix", "Error: ${response.error}")
-                    showError("❌ Mathpix: ${response.error}")
+                    // Fallback a Google Vision o ML Kit
+                    if (googleVisionApi != null) {
+                        tvProcessing.text = "🔍 Error Mathpix, usando Google Vision..."
+                        processGoogleVision(bitmap)
+                    } else {
+                        tvProcessing.text = "🔍 Error Mathpix, usando ML Kit..."
+                        processMLKit(bitmap)
+                    }
                 } else {
                     val latex = response.latex_styled ?: response.text ?: ""
                     Log.d("Mathpix", "Detected: $latex")
@@ -294,7 +373,12 @@ class CameraOcrActivity : AppCompatActivity() {
                 }
             } catch (e: Exception) {
                 Log.e("Mathpix", "Exception", e)
-                showError("❌ Error: ${e.message}")
+                // Fallback
+                if (googleVisionApi != null) {
+                    processGoogleVision(bitmap)
+                } else {
+                    processMLKit(bitmap)
+                }
             }
         }
     }
@@ -312,11 +396,8 @@ class CameraOcrActivity : AppCompatActivity() {
                     return@addOnSuccessListener
                 }
 
-                // Intentar convertir a LaTeX
                 val latex = improvedTextToLatex(text)
                 Log.d("MLKit", "Converted: $latex")
-                
-                // Mostrar confirmación con opción de editar
                 showConfirmationDialog(latex, text)
             }
             .addOnFailureListener { e ->
@@ -448,7 +529,7 @@ class CameraOcrActivity : AppCompatActivity() {
             btnCapture.isEnabled = !show
             btnGallery.isEnabled = !show
             btnManualInput.isEnabled = !show
-            switchMathpix.isEnabled = !show && mathpixApi != null
+            switchMathpix.isEnabled = !show && (googleVisionApi != null || mathpixApi != null)
         }
     }
 

@@ -150,79 +150,76 @@ class MainActivity : AppCompatActivity() {
     </style>
 </head>
 <body>
-    <math-field id="mathfield">
-    </math-field>
+    <math-field id="mathfield"></math-field>
     
     <script type="module">
         import 'https://unpkg.com/mathlive@0.98.6/dist/mathlive.min.js';
         
         const mf = document.getElementById('mathfield');
         
-        // TECLADO VIRTUAL PERSONALIZADO PARA EDO
+        // Configuración del teclado personalizado
         mf.setOptions({
             virtualKeyboardMode: 'manual',
             keypressSound: null,
             plonkSound: null,
+            
+            // Definir capa personalizada
             customVirtualKeyboardLayers: {
-                'edo-layer': {
+                'edo': {
                     styles: '',
                     rows: [
                         [
-                            { label: "y'", latex: "y'" },
-                            { label: "y''", latex: "y''" },
-                            { label: 'dy/dx', latex: '\\\\frac{dy}{dx}' },
-                            { label: 'x', latex: 'x' },
-                            { label: 'y', latex: 'y' },
-                            { label: '(', latex: '(' },
-                            { label: ')', latex: ')' },
+                            { class: 'keycap', latex: "y'" },
+                            { class: 'keycap', latex: "y''" },
+                            { class: 'keycap', latex: 'x' },
+                            { class: 'keycap', latex: 'y' },
+                            { class: 'keycap', latex: '(' },
+                            { class: 'keycap', latex: ')' },
                         ],
                         [
-                            { label: '7', latex: '7' },
-                            { label: '8', latex: '8' },
-                            { label: '9', latex: '9' },
-                            { label: '+', latex: '+' },
-                            { label: '−', latex: '-' },
-                            { class: 'action', label: '<svg><use xlink:href="#svg-arrow-left" /></svg>', command: ['performWithFeedback', 'deleteBackward'] },
+                            { class: 'keycap', latex: '7' },
+                            { class: 'keycap', latex: '8' },
+                            { class: 'keycap', latex: '9' },
+                            { class: 'keycap', latex: '+' },
+                            { class: 'keycap', latex: '-' },
+                            { class: 'action', label: '⌫', command: ['performWithFeedback', 'deleteBackward'] },
                         ],
                         [
-                            { label: '4', latex: '4' },
-                            { label: '5', latex: '5' },
-                            { label: '6', latex: '6' },
-                            { label: '×', latex: '\\\\times' },
-                            { label: '÷', latex: '\\\\div' },
-                            { class: 'action', label: 'CLR', command: ['performWithFeedback', 'deleteAll'] },
+                            { class: 'keycap', latex: '4' },
+                            { class: 'keycap', latex: '5' },
+                            { class: 'keycap', latex: '6' },
+                            { class: 'keycap', latex: '\\\\times' },
+                            { class: 'keycap', latex: '\\\\div' },
+                            { class: 'action', label: 'AC', command: ['performWithFeedback', 'deleteAll'] },
                         ],
                         [
-                            { label: '1', latex: '1' },
-                            { label: '2', latex: '2' },
-                            { label: '3', latex: '3' },
-                            { label: 'x^y', latex: '^' },
-                            { label: 'e^x', latex: 'e^{#?}' },
-                            { label: '=', latex: '=' },
+                            { class: 'keycap', latex: '1' },
+                            { class: 'keycap', latex: '2' },
+                            { class: 'keycap', latex: '3' },
+                            { class: 'keycap', latex: '^{#?}' },
+                            { class: 'keycap', latex: 'e^{#?}' },
+                            { class: 'keycap', latex: '=' },
                         ],
                         [
-                            { label: '0', latex: '0' },
-                            { label: '.', latex: '.' },
-                            { label: 'ln', latex: '\\\\ln' },
-                            { label: 'sin', latex: '\\\\sin' },
-                            { label: 'cos', latex: '\\\\cos' },
-                            { label: 'a/b', latex: '\\\\frac{#?}{#?}' },
+                            { class: 'keycap', latex: '0' },
+                            { class: 'keycap', latex: '.' },
+                            { class: 'keycap', latex: '\\\\ln' },
+                            { class: 'keycap', latex: '\\\\sin' },
+                            { class: 'keycap', latex: '\\\\cos' },
+                            { class: 'keycap', latex: '\\\\frac{#?}{#?}' },
                         ],
                     ]
                 }
             },
-            customVirtualKeyboards: {
-                'edo-keyboard': {
-                    label: 'EDO',
-                    tooltip: 'Teclado para EDO',
-                    layer: 'edo-layer'
-                }
-            },
-            virtualKeyboards: 'edo-keyboard'
+            
+            // Usar SOLO nuestro teclado personalizado
+            virtualKeyboards: 'edo'
         });
         
-        // Mostrar teclado automáticamente
-        mf.executeCommand('showVirtualKeyboard');
+        // Mostrar el teclado automáticamente
+        setTimeout(() => {
+            mf.executeCommand('showVirtualKeyboard');
+        }, 500);
         
         // Notificar a Android cuando cambia el contenido
         mf.addEventListener('input', () => {

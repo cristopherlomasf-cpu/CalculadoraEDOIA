@@ -17,10 +17,10 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content">
 
-            <!-- EDITOR MATHLIVE - Aumentado a 350dp para mucho más espacio -->
+            <!-- EDITOR MATHLIVE - Aumentado a 450dp para máximo espacio -->
             <androidx.cardview.widget.CardView
                 android:layout_width="match_parent"
-                android:layout_height="350dp"
+                android:layout_height="450dp"
                 android:layout_marginBottom="8dp"
                 app:cardCornerRadius="12dp"
                 app:cardElevation="4dp"
@@ -135,7 +135,7 @@
             <!-- RESULTADO - Altura fija para mejor control -->
             <androidx.cardview.widget.CardView
                 android:layout_width="match_parent"
-                android:layout_height="300dp"
+                android:layout_height="250dp"
                 app:cardCornerRadius="12dp"
                 app:cardElevation="2dp"
                 app:cardBackgroundColor="#FFFFFF">

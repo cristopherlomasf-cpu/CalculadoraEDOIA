@@ -36,7 +36,7 @@
                 <!-- EDITOR MATHLIVE -->
                 <com.google.android.material.card.MaterialCardView
                     android:layout_width="match_parent"
-                    android:layout_height="450dp"
+                    android:layout_height="400dp"
                     android:layout_marginBottom="8dp"
                     app:cardCornerRadius="12dp"
                     app:cardElevation="4dp">
@@ -67,6 +67,7 @@
 
                 </com.google.android.material.card.MaterialCardView>
 
+                <!-- Botón PVI -->
                 <Button
                     android:id="@+id/btnPvi"
                     android:layout_width="match_parent"
@@ -77,6 +78,94 @@
                     app:cornerRadius="8dp"
                     style="@style/Widget.Material3.Button.TonalButton"/>
 
+                <!-- Sección PVI - Inicialmente oculta -->
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/cardPvi"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="8dp"
+                    android:visibility="gone"
+                    app:cardCornerRadius="12dp"
+                    app:cardElevation="3dp"
+                    app:cardBackgroundColor="#E3F2FD">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="16dp">
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="Condiciones Iniciales (PVI)"
+                            android:textSize="16sp"
+                            android:textColor="#1976D2"
+                            android:textStyle="bold"
+                            android:gravity="center"
+                            android:layout_marginBottom="12dp"/>
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:gravity="center">
+
+                            <!-- Campo x0 -->
+                            <com.google.android.material.textfield.TextInputLayout
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:layout_marginEnd="8dp"
+                                app:boxBackgroundMode="outline"
+                                app:boxCornerRadiusTopStart="8dp"
+                                app:boxCornerRadiusTopEnd="8dp"
+                                app:boxCornerRadiusBottomStart="8dp"
+                                app:boxCornerRadiusBottomEnd="8dp"
+                                app:boxBackgroundColor="@android:color/white">
+
+                                <com.google.android.material.textfield.TextInputEditText
+                                    android:id="@+id/etX0"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:hint="x₀"
+                                    android:inputType="numberDecimal|numberSigned"
+                                    android:textSize="16sp"
+                                    android:gravity="center"/>
+
+                            </com.google.android.material.textfield.TextInputLayout>
+
+                            <!-- Campo y0 -->
+                            <com.google.android.material.textfield.TextInputLayout
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:layout_marginStart="8dp"
+                                app:boxBackgroundMode="outline"
+                                app:boxCornerRadiusTopStart="8dp"
+                                app:boxCornerRadiusTopEnd="8dp"
+                                app:boxCornerRadiusBottomStart="8dp"
+                                app:boxCornerRadiusBottomEnd="8dp"
+                                app:boxBackgroundColor="@android:color/white">
+
+                                <com.google.android.material.textfield.TextInputEditText
+                                    android:id="@+id/etY0"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:hint="y₀"
+                                    android:inputType="numberDecimal|numberSigned"
+                                    android:textSize="16sp"
+                                    android:gravity="center"/>
+
+                            </com.google.android.material.textfield.TextInputLayout>
+
+                        </LinearLayout>
+
+                    </LinearLayout>
+
+                </com.google.android.material.card.MaterialCardView>
+
+                <!-- EditText oculto para compatibilidad -->
                 <EditText
                     android:id="@+id/etEquation"
                     android:layout_width="match_parent"
@@ -85,29 +174,7 @@
                     android:importantForAutofill="no"
                     android:hint="EDO"/>
 
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="1dp"
-                    android:alpha="0"
-                    android:orientation="horizontal">
-
-                    <EditText
-                        android:id="@+id/etX0"
-                        android:layout_width="0dp"
-                        android:layout_height="1dp"
-                        android:layout_weight="1"
-                        android:importantForAutofill="no"
-                        android:hint="x0"/>
-
-                    <EditText
-                        android:id="@+id/etY0"
-                        android:layout_width="0dp"
-                        android:layout_height="1dp"
-                        android:layout_weight="1"
-                        android:importantForAutofill="no"
-                        android:hint="y0"/>
-                </LinearLayout>
-
+                <!-- Botones de acción -->
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -138,6 +205,7 @@
 
                 </LinearLayout>
 
+                <!-- Resultado -->
                 <com.google.android.material.card.MaterialCardView
                     android:layout_width="match_parent"
                     android:layout_height="250dp"

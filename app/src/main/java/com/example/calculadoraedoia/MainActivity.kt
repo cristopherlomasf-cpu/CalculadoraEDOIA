@@ -334,35 +334,21 @@ class MainActivity : AppCompatActivity() {
 
         setResultLatex("\\[\\text{Resolviendo...}\\]")
 
+        // PROMPT OPTIMIZADO (MÁS CORTO Y DIRECTO)
         val prompt = buildString {
-            appendLine("Resuelve esta EDO y devuelve SOLO LaTeX para MathJax. NO uses bloques de código ni markdown.")
+            appendLine("Resuelve esta EDO y devuelve SOLO LaTeX en este formato:")
             appendLine("")
-            appendLine("FORMATO ESTRICTO:")
-            appendLine("")
-            appendLine("Parte 1 (ANTES del delimitador):")
+            appendLine("Solución (antes de <<<PASOS>>>):")
             appendLine("\\[\\textbf{SOLUCION}\\]")
-            appendLine("\\[\\textbf{TIPO:} \\text{descripción del tipo}\\]")
-            appendLine("\\[y = \\text{resultado final}\\]")
+            appendLine("\\[\\textbf{TIPO:} \\text{tipo de EDO}\\]")
+            appendLine("\\[y = \\text{resultado}\\]")
             appendLine("")
-            appendLine("Delimitador obligatorio en una línea sola:")
             appendLine("<<<PASOS>>>")
             appendLine("")
-            appendLine("Parte 2 (DESPUÉS del delimitador):")
+            appendLine("Pasos (después de <<<PASOS>>>):")
             appendLine("\\[\\textbf{PASOS}\\]")
-            appendLine("\\[\\textbf{METODO:} \\text{nombre del método}\\]")
-            appendLine("\\[\\text{Paso 1: Descripción corta}\\]")
-            appendLine("\\[ecuaciones\\]")
-            appendLine("\\[\\text{Paso 2: Descripción corta}\\]")
-            appendLine("\\[ecuaciones\\]")
-            appendLine("(continúa hasta terminar)")
-            appendLine("")
-            appendLine("REGLAS IMPORTANTES:")
-            appendLine("1. NO uses bloques ```latex```")
-            appendLine("2. NO uses barras invertidas para espaciar. Usa espacios normales")
-            appendLine("3. TODA la solución debe estar ANTES de <<<PASOS>>>")
-            appendLine("4. TODOS los pasos deben estar DESPUÉS de <<<PASOS>>>")
-            appendLine("5. Cada paso debe tener descripción y ecuación en líneas separadas")
-            appendLine("6. Verifica tus cálculos y sé PRECISO en los resultados")
+            appendLine("\\[\\textbf{METODO:} \\text{método usado}\\]")
+            appendLine("Pasos numerados con ecuaciones")
             appendLine("")
             appendLine("EDO: $equation")
             if (hasPvi) appendLine("PVI: x0=$x0, y0=$y0")
@@ -373,12 +359,12 @@ class MainActivity : AppCompatActivity() {
                 val resp = withContext(Dispatchers.IO) {
                     api.chat(
                         PplxRequest(
-                            model = "sonar-reasoning",
+                            model = "sonar",  // CAMBIADO: de sonar-reasoning a sonar (MUCHO MÁS RÁPIDO)
                             messages = listOf(
-                                PplxMessage("system", "Eres un experto matemático. Devuelve únicamente LaTeX válido para MathJax. Sin bloques de código ni markdown. Verifica tus cálculos cuidadosamente."),
+                                PplxMessage("system", "Experto en EDO. Solo LaTeX, sin markdown."),
                                 PplxMessage("user", prompt)
                             ),
-                            temperature = 0.1
+                            temperature = 0.3  // AUMENTADO: de 0.1 a 0.3 (más rápido)
                         )
                     )
                 }

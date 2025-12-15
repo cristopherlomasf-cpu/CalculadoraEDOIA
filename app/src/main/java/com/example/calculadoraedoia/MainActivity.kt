@@ -279,11 +279,11 @@ class MainActivity : AppCompatActivity() {
                 tvFieldLabel.setTextColor(Color.parseColor("#1976D2"))
             }
             1 -> {
-                tvFieldLabel.text = "Condición inicial x₀:"
+                tvFieldLabel.text = "Condicion inicial x0:"
                 tvFieldLabel.setTextColor(Color.parseColor("#388E3C"))
             }
             2 -> {
-                tvFieldLabel.text = "Condición inicial y₀:"
+                tvFieldLabel.text = "Condicion inicial y0:"
                 tvFieldLabel.setTextColor(Color.parseColor("#D32F2F"))
             }
         }
@@ -291,8 +291,8 @@ class MainActivity : AppCompatActivity() {
 
     private fun updatePviButtonLabel() {
         btnPvi.text = when (activeField) {
-            1 -> "x₀"
-            2 -> "y₀"
+            1 -> "x0"
+            2 -> "y0"
             else -> "PVI"
         }
     }
@@ -335,34 +335,34 @@ class MainActivity : AppCompatActivity() {
         setResultLatex("\\[\\text{Resolviendo...}\\]")
 
         val prompt = buildString {
-            appendLine("Resuelve esta EDO y devuelve SOLO LaTeX para MathJax. NO uses bloques de código ni markdown.")
+            appendLine("Resuelve esta EDO y devuelve SOLO LaTeX para MathJax. NO uses bloques de codigo ni markdown.")
             appendLine("")
             appendLine("FORMATO ESTRICTO:")
             appendLine("")
             appendLine("Parte 1 (ANTES del delimitador):")
             appendLine("\\[\\textbf{SOLUCION}\\]")
-            appendLine("\\[\\textbf{TIPO:} \\text{descripción del tipo}\\]")
+            appendLine("\\[\\textbf{TIPO:} \\text{descripcion del tipo}\\]")
             appendLine("\\[y = \\text{resultado final}\\]")
             appendLine("")
-            appendLine("Delimitador obligatorio en una línea sola:")
+            appendLine("Delimitador obligatorio en una linea sola:")
             appendLine("<<<PASOS>>>")
             appendLine("")
-            appendLine("Parte 2 (DESPUÉS del delimitador):")
+            appendLine("Parte 2 (DESPUES del delimitador):")
             appendLine("\\[\\textbf{PASOS}\\]")
-            appendLine("\\[\\textbf{METODO:} \\text{nombre del método}\\]")
-            appendLine("\\[\\text{Paso 1: Descripción corta}\\]")
+            appendLine("\\[\\textbf{METODO:} \\text{nombre del metodo}\\]")
+            appendLine("\\[\\text{Paso 1: Descripcion corta}\\]")
             appendLine("\\[ecuaciones\\]")
-            appendLine("\\[\\text{Paso 2: Descripción corta}\\]")
+            appendLine("\\[\\text{Paso 2: Descripcion corta}\\]")
             appendLine("\\[ecuaciones\\]")
-            appendLine("(continúa hasta terminar)")
+            appendLine("(continua hasta terminar)")
             appendLine("")
             appendLine("REGLAS IMPORTANTES:")
             appendLine("1. NO uses bloques ```latex```")
             appendLine("2. NO uses barras invertidas para espaciar. Usa espacios normales")
-            appendLine("3. TODA la solución debe estar ANTES de <<<PASOS>>>")
-            appendLine("4. TODOS los pasos deben estar DESPUÉS de <<<PASOS>>>")
-            appendLine("5. Cada paso debe tener descripción y ecuación en líneas separadas")
-            appendLine("6. Verifica tus cálculos y sé PRECISO en los resultados")
+            appendLine("3. TODA la solucion debe estar ANTES de <<<PASOS>>>")
+            appendLine("4. TODOS los pasos deben estar DESPUES de <<<PASOS>>>")
+            appendLine("5. Cada paso debe tener descripcion y ecuacion en lineas separadas")
+            appendLine("6. Verifica tus calculos y se PRECISO en los resultados")
             appendLine("")
             appendLine("EDO: $equation")
             if (hasPvi) appendLine("PVI: x0=$x0, y0=$y0")
@@ -375,7 +375,7 @@ class MainActivity : AppCompatActivity() {
                         PplxRequest(
                             model = "sonar-reasoning",
                             messages = listOf(
-                                PplxMessage("system", "Eres un experto matemático. Devuelve únicamente LaTeX válido para MathJax. Sin bloques de código ni markdown. Verifica tus cálculos cuidadosamente."),
+                                PplxMessage("system", "Eres un experto matematico. Devuelve unicamente LaTeX valido para MathJax. Sin bloques de codigo ni markdown. Verifica tus calculos cuidadosamente."),
                                 PplxMessage("user", prompt)
                             ),
                             temperature = 0.1
@@ -421,12 +421,10 @@ class MainActivity : AppCompatActivity() {
         val steps = if (parts.size > 1) parts[1].trim() else ""
 
         val safeSolution = solution.ifBlank {
-            "\\[\\textbf{SOLUCION}\\]
-\\[\\textbf{TIPO:} \\text{(no disponible)}\\]"
+            "\\[\\textbf{SOLUCION}\\]\\n\\[\\textbf{TIPO:} \\text{(no disponible)}\\]"
         }
         val safeSteps = steps.ifBlank {
-            "\\[\\textbf{PASOS}\\]
-\\[\\textbf{METODO:} \\text{(no disponible)}\\]"
+            "\\[\\textbf{PASOS}\\]\\n\\[\\textbf{METODO:} \\text{(no disponible)}\\]"
         }
         return Pair(safeSolution, safeSteps)
     }

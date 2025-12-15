@@ -3,7 +3,7 @@ import com.android.build.gradle.internal.cxx.configure.gradleLocalProperties
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
-    id("com.google.devtools.ksp") version "2.0.21-1.0.28"
+    id("com.google.devtools.ksp") version "1.9.25-1.0.20"
 }
 
 android {
@@ -12,7 +12,7 @@ android {
     }
 
     namespace = "com.example.calculadoraedoia"
-    compileSdk = 36
+    compileSdk = 35
 
     defaultConfig {
         val pplxKey = gradleLocalProperties(rootDir, providers).getProperty("PPLX_API_KEY") ?: ""
@@ -25,7 +25,7 @@ android {
         
         applicationId = "com.example.calculadoraedoia"
         minSdk = 26
-        targetSdk = 36
+        targetSdk = 35
         versionCode = 1
         versionName = "1.0"
 

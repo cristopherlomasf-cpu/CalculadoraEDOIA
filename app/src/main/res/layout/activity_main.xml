@@ -105,11 +105,13 @@
                             android:gravity="center"
                             android:layout_marginBottom="12dp"/>
 
+                        <!-- Primera fila: x0, y0 -->
                         <LinearLayout
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:orientation="horizontal"
-                            android:gravity="center">
+                            android:gravity="center"
+                            android:layout_marginBottom="8dp">
 
                             <!-- Campo x0 -->
                             <com.google.android.material.textfield.TextInputLayout
@@ -160,6 +162,28 @@
                             </com.google.android.material.textfield.TextInputLayout>
 
                         </LinearLayout>
+
+                        <!-- Segunda fila: y'0 (centrado) -->
+                        <com.google.android.material.textfield.TextInputLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            app:boxBackgroundMode="outline"
+                            app:boxCornerRadiusTopStart="8dp"
+                            app:boxCornerRadiusTopEnd="8dp"
+                            app:boxCornerRadiusBottomStart="8dp"
+                            app:boxCornerRadiusBottomEnd="8dp"
+                            app:boxBackgroundColor="@android:color/white">
+
+                            <com.google.android.material.textfield.TextInputEditText
+                                android:id="@+id/etYPrime0"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:hint="y'₀ (para EDO de 2° orden)"
+                                android:inputType="numberDecimal|numberSigned"
+                                android:textSize="16sp"
+                                android:gravity="center"/>
+
+                        </com.google.android.material.textfield.TextInputLayout>
 
                     </LinearLayout>
 

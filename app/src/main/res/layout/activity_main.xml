@@ -17,10 +17,10 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content">
 
-            <!-- EDITOR MATHLIVE - Aumentado a 250dp para mejor visibilidad -->
+            <!-- EDITOR MATHLIVE - Aumentado a 350dp para mucho más espacio -->
             <androidx.cardview.widget.CardView
                 android:layout_width="match_parent"
-                android:layout_height="250dp"
+                android:layout_height="350dp"
                 android:layout_marginBottom="8dp"
                 app:cardCornerRadius="12dp"
                 app:cardElevation="4dp"
@@ -33,35 +33,15 @@
                     android:padding="8dp">
 
                     <!-- Etiqueta del campo activo -->
-                    <LinearLayout
+                    <TextView
+                        android:id="@+id/tvFieldLabel"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:gravity="center_vertical"
-                        android:layout_marginBottom="4dp">
-
-                        <TextView
-                            android:id="@+id/tvFieldLabel"
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:text="EDO:"
-                            android:textSize="14sp"
-                            android:textColor="#1976D2"
-                            android:textStyle="bold"/>
-
-                        <Button
-                            android:id="@+id/btnPvi"
-                            android:layout_width="wrap_content"
-                            android:layout_height="32dp"
-                            android:text="PVI"
-                            android:textSize="11sp"
-                            android:paddingStart="12dp"
-                            android:paddingEnd="12dp"
-                            android:minWidth="0dp"
-                            style="@style/Widget.Material3.Button.TonalButton"/>
-
-                    </LinearLayout>
+                        android:text="EDO:"
+                        android:textSize="14sp"
+                        android:textColor="#1976D2"
+                        android:textStyle="bold"
+                        android:layout_marginBottom="4dp"/>
 
                     <!-- Editor MathLive (WebView) -->
                     <WebView
@@ -74,6 +54,17 @@
                 </LinearLayout>
 
             </androidx.cardview.widget.CardView>
+
+            <!-- Botón PVI movido abajo del editor -->
+            <Button
+                android:id="@+id/btnPvi"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:text="PVI"
+                android:textSize="14sp"
+                android:layout_marginBottom="8dp"
+                app:cornerRadius="8dp"
+                style="@style/Widget.Material3.Button.TonalButton"/>
 
             <!-- Inputs invisibles (solo backing store para valores) -->
             <EditText

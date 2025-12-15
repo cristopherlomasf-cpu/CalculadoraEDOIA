@@ -233,6 +233,8 @@ class MainActivity : AppCompatActivity() {
                     steps = steps
                 )
                 database.equationDao().insert(history)
+                // Mantener solo las ultimas 20
+                database.equationDao().deleteOldHistory()
             } catch (e: Exception) {
                 Log.e("DB", "Error saving history", e)
             }
@@ -492,7 +494,6 @@ class MainActivity : AppCompatActivity() {
                 btnToggleSteps.isEnabled = true
                 setResultLatex(sol)
 
-                // Guardar en historial
                 saveToHistory(
                     equation = equation,
                     x0 = x0.ifBlank { null },

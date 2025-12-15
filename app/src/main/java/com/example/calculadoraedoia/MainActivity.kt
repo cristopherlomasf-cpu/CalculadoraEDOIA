@@ -132,12 +132,12 @@ class MainActivity : AppCompatActivity() {
             height: 100vh;
         }
         #mathfield {
-            font-size: 32px;
-            padding: 16px;
+            font-size: 36px;
+            padding: 20px;
             border: 2px solid #E0E0E0;
             border-radius: 8px;
             background: white;
-            min-height: 100px;
+            min-height: 120px;
             width: 100%;
         }
         #mathfield:focus {
@@ -145,12 +145,13 @@ class MainActivity : AppCompatActivity() {
             outline: none;
         }
         
-        /* Aumentar tamaño del teclado virtual */
+        /* Botones más grandes y espaciados */
         .ML__keyboard {
             --keyboard-zindex: 10000;
-            --keycap-height: 3.5em !important;
-            --keycap-font-size: 20px !important;
-            --keycap-small-font-size: 16px !important;
+            --keycap-height: 4em !important;
+            --keycap-font-size: 24px !important;
+            --keycap-small-font-size: 18px !important;
+            --keycap-gap: 6px !important;
         }
     </style>
 </head>
@@ -163,12 +164,12 @@ class MainActivity : AppCompatActivity() {
         
         const mf = document.getElementById('mathfield');
         
-        // Configurar teclado virtual - PESTAÑA EDO PRIMERO
+        // Configurar teclado virtual - SOLO LO ESENCIAL
         mf.setOptions({
             virtualKeyboardMode: 'onfocus',
             
-            // IMPORTANTE: EDO primero, luego numérico, funciones y símbolos
-            virtualKeyboards: 'edo numeric functions symbols',
+            // IMPORTANTE: EDO primero con MENOS botones
+            virtualKeyboards: 'edo numeric functions',
             
             keypressSound: null,
             plonkSound: null,
@@ -178,44 +179,24 @@ class MainActivity : AppCompatActivity() {
                     label: 'EDO',
                     tooltip: 'Ecuaciones Diferenciales',
                     rows: [
-                        // Fila 1: Derivadas (lo más usado)
+                        // Fila 1: Solo derivadas esenciales (3 botones)
                         [
-                            { latex: "y'", label: "<span style='font-size:24px'>y'</span>", class: 'action' },
-                            { latex: "y''", label: "<span style='font-size:24px'>y''</span>", class: 'action' },
-                            { latex: '\\\\frac{dy}{dx}', label: "<span style='font-size:18px'>dy/dx</span>" },
-                            { latex: 'x', label: "<span style='font-size:24px'>x</span>" },
-                            { latex: 'y', label: "<span style='font-size:24px'>y</span>" },
+                            { latex: "y'", label: "<span style='font-size:32px; font-weight:bold'>y'</span>", class: 'action', width: 1.5 },
+                            { latex: "y''", label: "<span style='font-size:32px; font-weight:bold'>y''</span>", class: 'action', width: 1.5 },
+                            { latex: '\\\\frac{dy}{dx}', label: "<span style='font-size:22px'>dy/dx</span>", width: 2 },
                         ],
-                        // Fila 2: Operadores comunes
+                        // Fila 2: Variables y exponencial (3 botones)
                         [
-                            { latex: '+', label: "<span style='font-size:28px'>+</span>" },
-                            { latex: '-', label: "<span style='font-size:28px'>−</span>" },
-                            { latex: '\\\\cdot', label: "<span style='font-size:24px'>×</span>" },
-                            { latex: '/', label: "<span style='font-size:28px'>÷</span>" },
-                            { latex: '=', label: "<span style='font-size:24px'>=</span>" },
+                            { latex: 'x', label: "<span style='font-size:36px; font-weight:bold'>x</span>", width: 1.5 },
+                            { latex: 'y', label: "<span style='font-size:36px; font-weight:bold'>y</span>", width: 1.5 },
+                            { latex: 'e^{#?}', label: "<span style='font-size:28px'>eˣ</span>", width: 2 },
                         ],
-                        // Fila 3: Exponenciales y funciones
-                        [
-                            { latex: 'e^{#?}', label: "<span style='font-size:22px'>eˣ</span>" },
-                            { latex: '^{#?}', label: "<span style='font-size:20px'>xⁿ</span>" },
-                            { latex: '\\\\sin(#?)', label: "<span style='font-size:20px'>sin</span>" },
-                            { latex: '\\\\cos(#?)', label: "<span style='font-size:20px'>cos</span>" },
-                            { latex: '\\\\ln(#?)', label: "<span style='font-size:20px'>ln</span>" },
-                        ],
-                        // Fila 4: Integrales y símbolos especiales
-                        [
-                            { latex: '\\\\int', label: "<span style='font-size:28px'>∫</span>" },
-                            { latex: '\\\\partial', label: "<span style='font-size:24px'>∂</span>" },
-                            { latex: '\\\\frac{#?}{#?}', label: "<span style='font-size:20px'>a/b</span>" },
-                            { latex: '\\\\sqrt{#?}', label: "<span style='font-size:24px'>√</span>" },
-                            { latex: '\\\\infty', label: "<span style='font-size:24px'>∞</span>" },
-                        ]
                     ]
                 }
             },
             
-            // Orden: EDO es el primero que se muestra
-            virtualKeyboardLayout: 'edo numeric functions symbols'
+            // Orden: EDO es el primero
+            virtualKeyboardLayout: 'edo numeric functions'
         });
         
         // Notificar a Android cuando cambia el contenido

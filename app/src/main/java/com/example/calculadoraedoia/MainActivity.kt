@@ -204,6 +204,8 @@ class MainActivity : AppCompatActivity() {
             AppCompatDelegate.MODE_NIGHT_YES
         }
         AppCompatDelegate.setDefaultNightMode(newMode)
+        // Recrear activity para aplicar cambios
+        recreate()
     }
 
     private fun loadFromHistory(equation: String, x0: String, y0: String, solution: String, steps: String) {
@@ -272,7 +274,17 @@ class MainActivity : AppCompatActivity() {
         )
     }
 
+    private fun isDarkMode(): Boolean {
+        return (resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES
+    }
+
     private fun getMathLiveHtml(): String {
+        val isDark = isDarkMode()
+        val bgColor = if (isDark) "#1E1E1E" else "#FAFAFA"
+        val cardBg = if (isDark) "#2C2C2C" else "#FFFFFF"
+        val borderColor = if (isDark) "#444444" else "#E0E0E0"
+        val textColor = if (isDark) "#E0E0E0" else "#000000"
+
         return """
 <!DOCTYPE html>
 <html>
@@ -284,7 +296,7 @@ class MainActivity : AppCompatActivity() {
         body { 
             font-family: system-ui;
             padding: 12px;
-            background: #FAFAFA;
+            background: $bgColor;
             overflow: hidden;
             height: 100vh;
             display: flex;
@@ -294,9 +306,10 @@ class MainActivity : AppCompatActivity() {
         #mathfield {
             font-size: 32px;
             padding: 16px;
-            border: 2px solid #E0E0E0;
+            border: 2px solid $borderColor;
             border-radius: 8px;
-            background: white;
+            background: $cardBg;
+            color: $textColor;
             width: 100%;
             min-height: 80px;
         }
@@ -537,6 +550,10 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun baseMathJaxHtml(): String {
+        val isDark = isDarkMode()
+        val bgColor = if (isDark) "#1E1E1E" else "#FFFFFF"
+        val textColor = if (isDark) "#E0E0E0" else "#000000"
+
         return """
             <!doctype html>
             <html>
@@ -551,6 +568,8 @@ class MainActivity : AppCompatActivity() {
                   overflow-wrap: break-word;
                   word-wrap: break-word;
                   line-height: 1.6;
+                  background: $bgColor;
+                  color: $textColor;
                 } 
               </style>
               <script>

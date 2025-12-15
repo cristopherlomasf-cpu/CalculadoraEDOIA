@@ -1,0 +1,155 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#000000">
+
+    <!-- Vista previa de la camara -->
+    <androidx.camera.view.PreviewView
+        android:id="@+id/previewView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+
+    <!-- Overlay con guias y controles -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:gravity="bottom"
+        android:padding="16dp">
+
+        <!-- Guia visual (marco para centrar ecuacion) -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1" />
+
+        <androidx.cardview.widget.CardView
+            android:layout_width="match_parent"
+            android:layout_height="200dp"
+            android:layout_marginBottom="16dp"
+            app:cardCornerRadius="12dp"
+            app:cardBackgroundColor="#00000000"
+            app:cardElevation="0dp">
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:background="@android:color/transparent" />
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="4dp"
+                android:layout_gravity="top"
+                android:background="#FFFFFF" />
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="4dp"
+                android:layout_gravity="bottom"
+                android:background="#FFFFFF" />
+
+            <View
+                android:layout_width="4dp"
+                android:layout_height="match_parent"
+                android:layout_gravity="start"
+                android:background="#FFFFFF" />
+
+            <View
+                android:layout_width="4dp"
+                android:layout_height="match_parent"
+                android:layout_gravity="end"
+                android:background="#FFFFFF" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:text="Centra la ecuacion aqui"
+                android:textColor="#FFFFFF"
+                android:textSize="16sp"
+                android:background="#80000000"
+                android:padding="8dp"
+                android:textStyle="bold" />
+        </androidx.cardview.widget.CardView>
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1" />
+
+        <!-- Controles -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center"
+            android:paddingBottom="24dp">
+
+            <!-- Boton cancelar -->
+            <Button
+                android:id="@+id/btnCancel"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Cancelar"
+                android:textSize="14sp"
+                android:layout_marginEnd="16dp"
+                style="@style/Widget.Material3.Button.OutlinedButton" />
+
+            <!-- Boton capturar -->
+            <com.google.android.material.floatingactionbutton.FloatingActionButton
+                android:id="@+id/btnCapture"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:src="@android:drawable/ic_menu_camera"
+                android:contentDescription="Capturar"
+                app:tint="#FFFFFF"
+                app:fabSize="normal" />
+
+            <!-- Boton galeria -->
+            <Button
+                android:id="@+id/btnGallery"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Galeria"
+                android:textSize="14sp"
+                android:layout_marginStart="16dp"
+                style="@style/Widget.Material3.Button.OutlinedButton" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <!-- Indicador de procesamiento -->
+    <androidx.cardview.widget.CardView
+        android:id="@+id/processingCard"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:layout_margin="32dp"
+        android:visibility="gone"
+        app:cardCornerRadius="12dp"
+        app:cardElevation="8dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="24dp"
+            android:gravity="center">
+
+            <ProgressBar
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:layout_marginBottom="16dp" />
+
+            <TextView
+                android:id="@+id/tvProcessing"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Procesando imagen..."
+                android:textSize="16sp"
+                android:textColor="#212121" />
+        </LinearLayout>
+    </androidx.cardview.widget.CardView>
+
+</FrameLayout>

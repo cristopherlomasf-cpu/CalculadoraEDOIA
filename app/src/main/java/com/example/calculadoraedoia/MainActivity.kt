@@ -144,6 +144,14 @@ class MainActivity : AppCompatActivity() {
             border-color: #1976D2;
             outline: none;
         }
+        
+        /* Aumentar tamaño del teclado virtual */
+        .ML__keyboard {
+            --keyboard-zindex: 10000;
+            --keycap-height: 3.5em !important;
+            --keycap-font-size: 20px !important;
+            --keycap-small-font-size: 16px !important;
+        }
     </style>
 </head>
 <body>
@@ -155,30 +163,37 @@ class MainActivity : AppCompatActivity() {
         
         const mf = document.getElementById('mathfield');
         
-        // Configurar teclado virtual
+        // Configurar teclado virtual con mejor tamaño
         mf.setOptions({
             virtualKeyboardMode: 'onfocus',
             virtualKeyboards: 'numeric functions symbols greek',
+            
+            // Hacer el teclado más grande
+            keypressSound: null,
+            plonkSound: null,
+            
             customVirtualKeyboardLayers: {
                 'edo': {
                     label: 'EDO',
                     tooltip: 'Ecuaciones Diferenciales',
                     rows: [
                         [
-                            { latex: "y'", label: "y'", class: 'action' },
-                            { latex: "y''", label: "y''", class: 'action' },
-                            { latex: '\\\\frac{dy}{dx}', label: 'dy/dx', class: 'small' },
-                            { latex: '\\\\frac{d^2y}{dx^2}', label: 'd²y/dx²', class: 'small' },
-                            { latex: '\\\\int', label: '∫' },
-                            { latex: '\\\\partial', label: '∂' },
+                            { latex: "y'", label: "<span style='font-size:24px'>y'</span>", class: 'action' },
+                            { latex: "y''", label: "<span style='font-size:24px'>y''</span>", class: 'action' },
+                            { latex: '\\\\frac{dy}{dx}', label: "<span style='font-size:18px'>dy/dx</span>", class: 'small' },
+                            { latex: '\\\\frac{d^2y}{dx^2}', label: "<span style='font-size:16px'>d²y/dx²</span>", class: 'small' },
                         ],
                         [
-                            { latex: 'e^{#?}', label: 'eˣ' },
-                            { latex: '\\\\sin(#?)', label: 'sin' },
-                            { latex: '\\\\cos(#?)', label: 'cos' },
-                            { latex: '\\\\tan(#?)', label: 'tan' },
-                            { latex: '\\\\ln(#?)', label: 'ln' },
-                            { latex: '\\\\log(#?)', label: 'log' },
+                            { latex: '\\\\int', label: "<span style='font-size:28px'>∫</span>" },
+                            { latex: '\\\\partial', label: "<span style='font-size:24px'>∂</span>" },
+                            { latex: 'e^{#?}', label: "<span style='font-size:22px'>eˣ</span>" },
+                            { latex: '\\\\infty', label: "<span style='font-size:24px'>∞</span>" },
+                        ],
+                        [
+                            { latex: '\\\\sin(#?)', label: "<span style='font-size:20px'>sin</span>" },
+                            { latex: '\\\\cos(#?)', label: "<span style='font-size:20px'>cos</span>" },
+                            { latex: '\\\\tan(#?)', label: "<span style='font-size:20px'>tan</span>" },
+                            { latex: '\\\\ln(#?)', label: "<span style='font-size:20px'>ln</span>" },
                         ]
                     ]
                 }

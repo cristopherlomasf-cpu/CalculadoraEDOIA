@@ -87,6 +87,7 @@ class HistoryActivity : AppCompatActivity() {
             putExtra(EXTRA_EQUATION, history.equation)
             putExtra(EXTRA_X0, history.x0 ?: "")
             putExtra(EXTRA_Y0, history.y0 ?: "")
+            putExtra(EXTRA_YPRIME0, history.yPrime0 ?: "")
             putExtra(EXTRA_SOLUTION, history.solution)
             putExtra(EXTRA_STEPS, history.steps)
         }
@@ -99,8 +100,11 @@ class HistoryActivity : AppCompatActivity() {
             appendLine("=== Calculadora EDO ===")
             appendLine()
             appendLine("Ecuacion: ${history.equation}")
-            if (!history.x0.isNullOrBlank() || !history.y0.isNullOrBlank()) {
-                appendLine("PVI: x0=${history.x0}, y0=${history.y0}")
+            if (!history.x0.isNullOrBlank() || !history.y0.isNullOrBlank() || !history.yPrime0.isNullOrBlank()) {
+                appendLine("PVI: x0=${history.x0 ?: ""}, y0=${history.y0 ?: ""}")
+                if (!history.yPrime0.isNullOrBlank()) {
+                    appendLine("     y'0=${history.yPrime0}")
+                }
             }
             appendLine()
             appendLine("Solucion:")
@@ -144,6 +148,7 @@ class HistoryActivity : AppCompatActivity() {
         const val EXTRA_EQUATION = "equation"
         const val EXTRA_X0 = "x0"
         const val EXTRA_Y0 = "y0"
+        const val EXTRA_YPRIME0 = "yPrime0"
         const val EXTRA_SOLUTION = "solution"
         const val EXTRA_STEPS = "steps"
     }

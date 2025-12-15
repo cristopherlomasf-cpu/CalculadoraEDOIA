@@ -1,6 +1,7 @@
 package com.example.calculadoraedoia
 
 import android.annotation.SuppressLint
+import android.content.Intent
 import android.graphics.Color
 import android.os.Bundle
 import android.util.Log
@@ -10,7 +11,9 @@ import android.webkit.WebViewClient
 import android.widget.Button
 import android.widget.EditText
 import android.widget.TextView
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
+import com.google.android.material.floatingactionbutton.FloatingActionButton
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -33,11 +36,23 @@ class MainActivity : AppCompatActivity() {
     private lateinit var btnPvi: Button
     private lateinit var btnSolve: Button
     private lateinit var btnToggleSteps: Button
+    private lateinit var fabCamera: FloatingActionButton
 
     private var activeField = 0
     private var lastSolutionLatex: String? = null
     private var lastStepsLatex: String? = null
     private var isMathLiveReady = false
+
+    private val cameraOcrLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == RESULT_OK) {
+            val latex = result.data?.getStringExtra(CameraOcrActivity.EXTRA_LATEX_RESULT)
+            if (!latex.isNullOrBlank()) {
+                insertLatexIntoEditor(latex)
+            }
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -52,6 +67,7 @@ class MainActivity : AppCompatActivity() {
         btnPvi = findViewById(R.id.btnPvi)
         btnSolve = findViewById(R.id.btnSolve)
         btnToggleSteps = findViewById(R.id.btnToggleSteps)
+        fabCamera = findViewById(R.id.fabCamera)
         btnToggleSteps.text = "Pasos"
 
         setupMathLiveEditor()
@@ -76,15 +92,35 @@ class MainActivity : AppCompatActivity() {
                 setResultLatex("\\[\\text{No hay pasos disponibles.}\\]")
                 return@setOnClickListener
             }
-            val i = android.content.Intent(this, StepsActivity::class.java)
+            val i = Intent(this, StepsActivity::class.java)
             i.putExtra(StepsActivity.EXTRA_STEPS_LATEX, steps)
             startActivity(i)
+        }
+
+        fabCamera.setOnClickListener {
+            val intent = Intent(this, CameraOcrActivity::class.java)
+            cameraOcrLauncher.launch(intent)
         }
 
         updateFieldLabel()
         updatePviButtonLabel()
         btnToggleSteps.isEnabled = false
         setResultLatex("\\[\\text{Presiona Resolver.}\\]")
+    }
+
+    private fun insertLatexIntoEditor(latex: String) {
+        if (!isMathLiveReady) return
+        
+        // Insertar el LaTeX en el campo activo
+        when (activeField) {
+            0 -> etEquation.setText(latex)
+            1 -> etX0.setText(latex)
+            2 -> etY0.setText(latex)
+        }
+        
+        // Actualizar MathLive
+        val jsCmd = "setLatex(${jsonString(latex)});"
+        wvMathLive.evaluateJavascript(jsCmd, null)
     }
 
     @SuppressLint("SetJavaScriptEnabled")

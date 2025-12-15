@@ -22,7 +22,7 @@
             android:layout_height="0dp"
             android:layout_weight="1" />
 
-        <!-- Guia visual -->
+        <!-- Guía visual -->
         <androidx.cardview.widget.CardView
             android:layout_width="match_parent"
             android:layout_height="200dp"
@@ -59,7 +59,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_gravity="center"
-                android:text="Centra la ecuacion"
+                android:text="Centra la ecuación"
                 android:textColor="#FFFFFF"
                 android:textSize="16sp"
                 android:background="#80000000"
@@ -107,36 +107,59 @@
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="horizontal"
+            android:orientation="vertical"
             android:gravity="center"
             android:paddingBottom="24dp">
 
-            <Button
-                android:id="@+id/btnCancel"
-                android:layout_width="wrap_content"
+            <!-- Fila superior: Cancelar, Capturar, Galería -->
+            <LinearLayout
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Cancelar"
-                android:textSize="14sp"
-                android:layout_marginEnd="16dp"
-                style="@style/Widget.Material3.Button.OutlinedButton" />
+                android:orientation="horizontal"
+                android:gravity="center"
+                android:layout_marginBottom="12dp">
 
-            <com.google.android.material.floatingactionbutton.FloatingActionButton
-                android:id="@+id/btnCapture"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:src="@android:drawable/ic_menu_camera"
-                android:contentDescription="Capturar"
-                app:tint="#FFFFFF"
-                app:fabSize="normal" />
+                <Button
+                    android:id="@+id/btnCancel"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Cancelar"
+                    android:textSize="13sp"
+                    android:layout_marginEnd="8dp"
+                    style="@style/Widget.Material3.Button.OutlinedButton" />
 
+                <com.google.android.material.floatingactionbutton.FloatingActionButton
+                    android:id="@+id/btnCapture"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:src="@android:drawable/ic_menu_camera"
+                    android:contentDescription="Capturar"
+                    app:tint="#FFFFFF"
+                    app:fabSize="normal"
+                    android:layout_marginStart="8dp"
+                    android:layout_marginEnd="8dp" />
+
+                <Button
+                    android:id="@+id/btnGallery"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Galería"
+                    android:textSize="13sp"
+                    android:layout_marginStart="8dp"
+                    style="@style/Widget.Material3.Button.OutlinedButton" />
+            </LinearLayout>
+
+            <!-- Botón entrada manual -->
             <Button
-                android:id="@+id/btnGallery"
-                android:layout_width="wrap_content"
+                android:id="@+id/btnManualInput"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Galeria"
+                android:text="✏️ Escribir manualmente"
                 android:textSize="14sp"
-                android:layout_marginStart="16dp"
-                style="@style/Widget.Material3.Button.OutlinedButton" />
+                style="@style/Widget.Material3.Button.TonalButton" />
+
         </LinearLayout>
     </LinearLayout>
 

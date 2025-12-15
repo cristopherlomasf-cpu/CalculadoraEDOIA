@@ -334,24 +334,28 @@ class MainActivity : AppCompatActivity() {
 
         setResultLatex("\\[\\text{Resolviendo...}\\]")
 
-        // PROMPT OPTIMIZADO (MÁS CORTO Y DIRECTO)
+        // PROMPT MEJORADO CON ÉNFASIS EN PRECISIÓN
         val prompt = buildString {
-            appendLine("Resuelve esta EDO y devuelve SOLO LaTeX en este formato:")
+            appendLine("Resuelve esta EDO PASO A PASO con PRECISIÓN MATEMÁTICA. Devuelve solo LaTeX.")
             appendLine("")
-            appendLine("Solución (antes de <<<PASOS>>>):")
+            appendLine("Formato requerido:")
+            appendLine("")
+            appendLine("ANTES de <<<PASOS>>>:")
             appendLine("\\[\\textbf{SOLUCION}\\]")
             appendLine("\\[\\textbf{TIPO:} \\text{tipo de EDO}\\]")
-            appendLine("\\[y = \\text{resultado}\\]")
+            appendLine("\\[y = \\text{solución completa con constante C si aplica}\\]")
             appendLine("")
             appendLine("<<<PASOS>>>")
             appendLine("")
-            appendLine("Pasos (después de <<<PASOS>>>):")
-            appendLine("\\[\\textbf{PASOS}\\]")
-            appendLine("\\[\\textbf{METODO:} \\text{método usado}\\]")
-            appendLine("Pasos numerados con ecuaciones")
+            appendLine("DESPUÉS de <<<PASOS>>>:")
+            appendLine("\\[\\textbf{PASOS DETALLADOS}\\]")
+            appendLine("\\[\\textbf{METODO:} \\text{método utilizado}\\]")
+            appendLine("Incluye todos los pasos algebraicos intermedios")
+            appendLine("")
+            appendLine("IMPORTANTE: Verifica cada cálculo y NO inventes soluciones triviales como y=0")
             appendLine("")
             appendLine("EDO: $equation")
-            if (hasPvi) appendLine("PVI: x0=$x0, y0=$y0")
+            if (hasPvi) appendLine("Condiciones iniciales: x0=$x0, y0=$y0")
         }
 
         CoroutineScope(Dispatchers.Main).launch {
@@ -359,12 +363,12 @@ class MainActivity : AppCompatActivity() {
                 val resp = withContext(Dispatchers.IO) {
                     api.chat(
                         PplxRequest(
-                            model = "sonar",  // CAMBIADO: de sonar-reasoning a sonar (MUCHO MÁS RÁPIDO)
+                            model = "sonar-pro",  // BALANCE: Más preciso que sonar, más rápido que sonar-reasoning
                             messages = listOf(
-                                PplxMessage("system", "Experto en EDO. Solo LaTeX, sin markdown."),
+                                PplxMessage("system", "Eres un experto matemático especializado en ecuaciones diferenciales. Resuelve con precisión. Solo LaTeX, sin markdown."),
                                 PplxMessage("user", prompt)
                             ),
-                            temperature = 0.3  // AUMENTADO: de 0.1 a 0.3 (más rápido)
+                            temperature = 0.2  // Reducido para mayor precisión
                         )
                     )
                 }

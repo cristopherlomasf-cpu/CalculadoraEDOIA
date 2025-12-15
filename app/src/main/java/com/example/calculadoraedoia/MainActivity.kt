@@ -11,9 +11,6 @@ import android.widget.Button
 import android.widget.EditText
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
-import androidx.viewpager2.widget.ViewPager2
-import com.google.android.material.tabs.TabLayout
-import com.google.android.material.tabs.TabLayoutMediator
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -21,7 +18,7 @@ import kotlinx.coroutines.withContext
 import retrofit2.HttpException
 import java.io.IOException
 
-class MainActivity : AppCompatActivity(), KeyboardPageFragment.KeyClickListener {
+class MainActivity : AppCompatActivity() {
 
     private val api by lazy { PerplexityClient.create(BuildConfig.PPLX_API_KEY) }
 
@@ -33,10 +30,6 @@ class MainActivity : AppCompatActivity(), KeyboardPageFragment.KeyClickListener 
     private lateinit var wvMathLive: WebView
     private lateinit var wvResult: WebView
 
-    private lateinit var tabLayout: TabLayout
-    private lateinit var viewPager: ViewPager2
-    private lateinit var pagerAdapter: KeyboardPagerAdapter
-
     private lateinit var btnPvi: Button
     private lateinit var btnSolve: Button
     private lateinit var btnToggleSteps: Button
@@ -45,7 +38,6 @@ class MainActivity : AppCompatActivity(), KeyboardPageFragment.KeyClickListener 
     private var activeField = 0
 
     // Toggle pasos
-    private var showSteps = false
     private var lastSolutionLatex: String? = null
     private var lastStepsLatex: String? = null
 
@@ -63,9 +55,6 @@ class MainActivity : AppCompatActivity(), KeyboardPageFragment.KeyClickListener 
         wvMathLive = findViewById(R.id.wvMathLive)
         wvResult = findViewById(R.id.wvLatexResult)
 
-        tabLayout = findViewById(R.id.tabKeyboard)
-        viewPager = findViewById(R.id.vpKeyboard)
-
         btnPvi = findViewById(R.id.btnPvi)
         btnSolve = findViewById(R.id.btnSolve)
         btnToggleSteps = findViewById(R.id.btnToggleSteps)
@@ -73,12 +62,6 @@ class MainActivity : AppCompatActivity(), KeyboardPageFragment.KeyClickListener 
 
         setupMathLiveEditor()
         setupWebView(wvResult)
-
-        pagerAdapter = KeyboardPagerAdapter(this)
-        viewPager.adapter = pagerAdapter
-        TabLayoutMediator(tabLayout, viewPager) { tab, pos ->
-            tab.text = pagerAdapter.title(pos)
-        }.attach()
 
         btnPvi.setOnClickListener {
             activeField = when (activeField) {
@@ -138,7 +121,7 @@ class MainActivity : AppCompatActivity(), KeyboardPageFragment.KeyClickListener 
 <html>
 <head>
     <meta charset="utf-8"/>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { 
@@ -146,14 +129,15 @@ class MainActivity : AppCompatActivity(), KeyboardPageFragment.KeyClickListener 
             padding: 8px;
             background: #FAFAFA;
             overflow: hidden;
+            height: 100vh;
         }
         #mathfield {
-            font-size: 28px;
-            padding: 12px;
+            font-size: 32px;
+            padding: 16px;
             border: 2px solid #E0E0E0;
             border-radius: 8px;
             background: white;
-            min-height: 80px;
+            min-height: 100px;
             width: 100%;
         }
         #mathfield:focus {
@@ -163,13 +147,44 @@ class MainActivity : AppCompatActivity(), KeyboardPageFragment.KeyClickListener 
     </style>
 </head>
 <body>
-    <math-field id="mathfield" virtual-keyboard-mode="manual">
+    <math-field id="mathfield">
     </math-field>
     
     <script type="module">
         import 'https://unpkg.com/mathlive@0.98.6/dist/mathlive.min.js';
         
         const mf = document.getElementById('mathfield');
+        
+        // Configurar teclado virtual
+        mf.setOptions({
+            virtualKeyboardMode: 'onfocus',
+            virtualKeyboards: 'numeric functions symbols greek',
+            customVirtualKeyboardLayers: {
+                'edo': {
+                    label: 'EDO',
+                    tooltip: 'Ecuaciones Diferenciales',
+                    rows: [
+                        [
+                            { latex: "y'", label: "y'", class: 'action' },
+                            { latex: "y''", label: "y''", class: 'action' },
+                            { latex: '\\\\frac{dy}{dx}', label: 'dy/dx', class: 'small' },
+                            { latex: '\\\\frac{d^2y}{dx^2}', label: 'd²y/dx²', class: 'small' },
+                            { latex: '\\\\int', label: '∫' },
+                            { latex: '\\\\partial', label: '∂' },
+                        ],
+                        [
+                            { latex: 'e^{#?}', label: 'eˣ' },
+                            { latex: '\\\\sin(#?)', label: 'sin' },
+                            { latex: '\\\\cos(#?)', label: 'cos' },
+                            { latex: '\\\\tan(#?)', label: 'tan' },
+                            { latex: '\\\\ln(#?)', label: 'ln' },
+                            { latex: '\\\\log(#?)', label: 'log' },
+                        ]
+                    ]
+                }
+            },
+            virtualKeyboardLayout: 'edo numeric functions symbols'
+        });
         
         // Notificar a Android cuando cambia el contenido
         mf.addEventListener('input', () => {
@@ -188,15 +203,11 @@ class MainActivity : AppCompatActivity(), KeyboardPageFragment.KeyClickListener 
             return mf.value;
         };
         
-        window.insertLatex = function(latex) {
-            mf.executeCommand(['insert', latex]);
-        };
-        
         window.clearMathfield = function() {
             mf.value = '';
         };
         
-        // Auto-focus
+        // Auto-focus para mostrar teclado
         setTimeout(() => mf.focus(), 300);
     </script>
 </body>
@@ -257,90 +268,6 @@ class MainActivity : AppCompatActivity(), KeyboardPageFragment.KeyClickListener 
         wvMathLive.evaluateJavascript(jsCmd, null)
     }
 
-    override fun onKeyClicked(id: Int) {
-        if (!isMathLiveReady) return
-        
-        val latexToInsert = when (id) {
-            // Derivadas y EDO
-            R.id.kb_y1 -> { activeField = 0; updateFieldLabel(); updatePviButtonLabel(); focusMathLive(); "y'" }
-            R.id.kb_y2 -> { activeField = 0; updateFieldLabel(); updatePviButtonLabel(); focusMathLive(); "y''" }
-            R.id.kb_dydx -> { activeField = 0; updateFieldLabel(); updatePviButtonLabel(); focusMathLive(); "\\frac{dy}{dx}" }
-            R.id.kb_dx -> { activeField = 0; updateFieldLabel(); updatePviButtonLabel(); focusMathLive(); "dx" }
-            R.id.kb_dy -> { activeField = 0; updateFieldLabel(); updatePviButtonLabel(); focusMathLive(); "dy" }
-            R.id.kb_ddx -> { activeField = 0; updateFieldLabel(); updatePviButtonLabel(); focusMathLive(); "\\frac{d}{dx}" }
-            R.id.kb_int -> { activeField = 0; updateFieldLabel(); updatePviButtonLabel(); focusMathLive(); "\\int" }
-
-            // Básicos
-            R.id.kb_0 -> "0"
-            R.id.kb_1 -> "1"
-            R.id.kb_2 -> "2"
-            R.id.kb_3 -> "3"
-            R.id.kb_4 -> "4"
-            R.id.kb_5 -> "5"
-            R.id.kb_6 -> "6"
-            R.id.kb_7 -> "7"
-            R.id.kb_8 -> "8"
-            R.id.kb_9 -> "9"
-            R.id.kb_plus -> "+"
-            R.id.kb_minus -> "-"
-            R.id.kb_mul -> "\\cdot"
-            R.id.kb_div -> "/"
-            R.id.kb_pow -> "^{}"
-            R.id.kb_eq -> { activeField = 0; updateFieldLabel(); updatePviButtonLabel(); focusMathLive(); "=" }
-            R.id.kb_lpar -> "("
-            R.id.kb_rpar -> ")"
-            R.id.kb_dot -> "."
-            R.id.kb_frac -> "\\frac{}{}"
-            
-            // Funciones
-            R.id.kb_sin -> "\\sin("
-            R.id.kb_cos -> "\\cos("
-            R.id.kb_tan -> "\\tan("
-            R.id.kb_ln -> "\\ln("
-            R.id.kb_log -> "\\log("
-            R.id.kb_exp -> "e^{}"
-            R.id.kb_sqrt -> "\\sqrt{}"
-            R.id.kb_abs -> "\\left| \\right|"
-            
-            // Constantes y variables
-            R.id.kb_pi -> "\\pi"
-            R.id.kb_e -> "e"
-            R.id.kb_x -> "x"
-            R.id.kb_y -> "y"
-            R.id.kb_t -> "t"
-            R.id.kb_z -> "z"
-            
-            // Símbolos
-            R.id.kb_partial -> "\\partial"
-            R.id.kb_infty -> "\\infty"
-            R.id.kb_leq -> "\\le"
-            R.id.kb_geq -> "\\ge"
-            R.id.kb_neq -> "\\ne"
-            R.id.kb_pm -> "\\pm"
-            
-            // Especiales
-            R.id.kb_back -> { executeJsCommand("mf.executeCommand('deleteBackward')"); return }
-            R.id.kb_clear -> { executeJsCommand("clearMathfield()"); return }
-            R.id.kb_comma -> {
-                if (activeField == 1) {
-                    activeField = 2
-                    updateFieldLabel()
-                    updatePviButtonLabel()
-                    focusMathLive()
-                    return
-                } else ","
-            }
-            
-            else -> return
-        }
-        
-        executeJsCommand("insertLatex(${jsonString(latexToInsert)})")
-    }
-
-    private fun executeJsCommand(js: String) {
-        wvMathLive.evaluateJavascript(js, null)
-    }
-
     // -------- Resolver --------
 
     private fun onSolveClicked() {
@@ -358,7 +285,6 @@ class MainActivity : AppCompatActivity(), KeyboardPageFragment.KeyClickListener 
 
         val hasPvi = x0.isNotBlank() || y0.isNotBlank()
 
-        showSteps = false
         btnToggleSteps.isEnabled = false
         lastSolutionLatex = null
         lastStepsLatex = null

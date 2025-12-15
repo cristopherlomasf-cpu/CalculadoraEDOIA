@@ -29,6 +29,7 @@
         
         <activity android:name=".StepsActivity" />
         <activity android:name=".CameraOcrActivity" />
+        <activity android:name=".HistoryActivity" />
     </application>
 
 </manifest>

@@ -1,5 +1,6 @@
 package com.example.calculadoraedoia
 
+import android.graphics.Color
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
@@ -8,6 +9,7 @@ import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.widget.Button
 import android.widget.EditText
+import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.viewpager2.widget.ViewPager2
 import com.google.android.material.tabs.TabLayout
@@ -27,6 +29,7 @@ class MainActivity : AppCompatActivity(), KeyboardPageFragment.KeyClickListener 
     private lateinit var etX0: EditText
     private lateinit var etY0: EditText
 
+    private lateinit var tvFieldLabel: TextView
     private lateinit var wvPreviewTop: WebView
     private lateinit var wvResult: WebView
 
@@ -58,6 +61,7 @@ class MainActivity : AppCompatActivity(), KeyboardPageFragment.KeyClickListener 
         etX0 = findViewById(R.id.etX0)
         etY0 = findViewById(R.id.etY0)
 
+        tvFieldLabel = findViewById(R.id.tvFieldLabel)
         wvPreviewTop = findViewById(R.id.wvPreviewTop)
         wvResult = findViewById(R.id.wvLatexResult)
 
@@ -98,6 +102,7 @@ class MainActivity : AppCompatActivity(), KeyboardPageFragment.KeyClickListener 
                 1 -> 2
                 else -> 0
             }
+            updateFieldLabel()
             updatePviButtonLabel()
             schedulePreview()
         }
@@ -117,6 +122,7 @@ class MainActivity : AppCompatActivity(), KeyboardPageFragment.KeyClickListener 
 
 
         // Estado inicial
+        updateFieldLabel()
         updatePviButtonLabel()
         btnToggleSteps.text = "Ver pasos"
         btnToggleSteps.isEnabled = false
@@ -124,10 +130,27 @@ class MainActivity : AppCompatActivity(), KeyboardPageFragment.KeyClickListener 
         setResultLatex("\\[\\text{Presiona Resolver.}\\]")
     }
 
+    private fun updateFieldLabel() {
+        when (activeField) {
+            0 -> {
+                tvFieldLabel.text = "EDO:"
+                tvFieldLabel.setTextColor(Color.parseColor("#1976D2")) // Azul
+            }
+            1 -> {
+                tvFieldLabel.text = "Condición inicial x₀:"
+                tvFieldLabel.setTextColor(Color.parseColor("#388E3C")) // Verde
+            }
+            2 -> {
+                tvFieldLabel.text = "Condición inicial y₀:"
+                tvFieldLabel.setTextColor(Color.parseColor("#D32F2F")) // Rojo
+            }
+        }
+    }
+
     private fun updatePviButtonLabel() {
         btnPvi.text = when (activeField) {
-            1 -> "PVI: x0"
-            2 -> "PVI: y0"
+            1 -> "PVI: x₀"
+            2 -> "PVI: y₀"
             else -> "PVI"
         }
     }
@@ -177,8 +200,8 @@ class MainActivity : AppCompatActivity(), KeyboardPageFragment.KeyClickListener 
     override fun onKeyClicked(id: Int) {
         when (id) {
             // y' y''
-            R.id.kb_y1 -> { activeField = 0; updatePviButtonLabel(); insertText("y'") }
-            R.id.kb_y2 -> { activeField = 0; updatePviButtonLabel(); insertText("y''") }
+            R.id.kb_y1 -> { activeField = 0; updateFieldLabel(); updatePviButtonLabel(); insertText("y'") }
+            R.id.kb_y2 -> { activeField = 0; updateFieldLabel(); updatePviButtonLabel(); insertText("y''") }
 
             // BASIC
             R.id.kb_0 -> insertText("0")
@@ -197,13 +220,14 @@ class MainActivity : AppCompatActivity(), KeyboardPageFragment.KeyClickListener 
             R.id.kb_mul -> insertText("*")
             R.id.kb_div -> insertText("/")
             R.id.kb_pow -> insertText("^")
-            R.id.kb_eq -> { activeField = 0; updatePviButtonLabel(); insertText("=") }
+            R.id.kb_eq -> { activeField = 0; updateFieldLabel(); updatePviButtonLabel(); insertText("=") }
             R.id.kb_lpar -> insertText("(")
             R.id.kb_rpar -> insertText(")")
             R.id.kb_dot -> insertText(".")
             R.id.kb_comma -> {
                 if (activeField == 1) {
                     activeField = 2
+                    updateFieldLabel()
                     updatePviButtonLabel()
                     schedulePreview()
                 } else insertText(",")
@@ -234,11 +258,11 @@ class MainActivity : AppCompatActivity(), KeyboardPageFragment.KeyClickListener 
             R.id.kb_z -> insertText("z")
 
             // CALC/EDO
-            R.id.kb_dydx -> { activeField = 0; updatePviButtonLabel(); insertText("dy/dx") }
-            R.id.kb_dx -> { activeField = 0; updatePviButtonLabel(); insertText("dx") }
-            R.id.kb_dy -> { activeField = 0; updatePviButtonLabel(); insertText("dy") }
-            R.id.kb_int -> { activeField = 0; updatePviButtonLabel(); insertTemplate("int(", "f(x)", ",x)") }
-            R.id.kb_ddx -> { activeField = 0; updatePviButtonLabel(); insertTemplate("d/dx(", "f(x)", ")") }
+            R.id.kb_dydx -> { activeField = 0; updateFieldLabel(); updatePviButtonLabel(); insertText("dy/dx") }
+            R.id.kb_dx -> { activeField = 0; updateFieldLabel(); updatePviButtonLabel(); insertText("dx") }
+            R.id.kb_dy -> { activeField = 0; updateFieldLabel(); updatePviButtonLabel(); insertText("dy") }
+            R.id.kb_int -> { activeField = 0; updateFieldLabel(); updatePviButtonLabel(); insertTemplate("int(", "f(x)", ",x)") }
+            R.id.kb_ddx -> { activeField = 0; updateFieldLabel(); updatePviButtonLabel(); insertTemplate("d/dx(", "f(x)", ")") }
             R.id.kb_partial -> insertText("∂")
             R.id.kb_infty -> insertText("∞")
             R.id.kb_leq -> insertText("<=")
@@ -263,17 +287,43 @@ class MainActivity : AppCompatActivity(), KeyboardPageFragment.KeyClickListener 
 
         val showPvi = (x0.isNotBlank() || y0.isNotBlank() || activeField == 1 || activeField == 2)
 
-        val eqLatex = toLatexApprox(if (eq.isBlank()) "\\text{(EDO vacía)}" else eq)
-        val xLatex = toLatexApprox(if (x0.isBlank()) "?" else x0)
-        val yLatex = toLatexApprox(if (y0.isBlank()) "?" else y0)
+        // Mejorar conversión LaTeX para fracciones y potencias
+        val eqLatex = toLatexImproved(if (eq.isBlank()) "\\text{(vacío)}" else eq)
+        val xLatex = toLatexImproved(if (x0.isBlank()) "?" else x0)
+        val yLatex = toLatexImproved(if (y0.isBlank()) "?" else y0)
 
         val latex = buildString {
-            append("\\["); append(eqLatex); append("\\]")
+            // EDO principal
+            if (activeField == 0) {
+                append("\\[\\color{blue}{")
+                append(eqLatex)
+                append("}\\,|\\]")
+            } else {
+                append("\\[")
+                append(eqLatex)
+                append("\\]")
+            }
+            
+            // PVI si aplica
             if (showPvi) {
-                append("\\[x_0=")
-                append(if (activeField == 1) "\\boxed{$xLatex}" else xLatex)
-                append("\\qquad y_0=")
-                append(if (activeField == 2) "\\boxed{$yLatex}" else yLatex)
+                append("\\[")
+                if (activeField == 1) {
+                    append("\\color{green}{x_0=")
+                    append(xLatex)
+                    append("}\\,|")
+                } else {
+                    append("x_0=")
+                    append(xLatex)
+                }
+                append("\\qquad ")
+                if (activeField == 2) {
+                    append("\\color{red}{y_0=")
+                    append(yLatex)
+                    append("}\\,|")
+                } else {
+                    append("y_0=")
+                    append(yLatex)
+                }
                 append("\\]")
             }
         }
@@ -462,11 +512,12 @@ class MainActivity : AppCompatActivity(), KeyboardPageFragment.KeyClickListener 
               <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
               <style> 
                 body { 
-                  font-size: 18px; 
-                  padding: 8px; 
+                  font-size: 22px; 
+                  padding: 12px; 
                   margin: 0; 
                   overflow-wrap: break-word;
                   word-wrap: break-word;
+                  line-height: 1.6;
                 } 
               </style>
               <script>
@@ -498,17 +549,38 @@ class MainActivity : AppCompatActivity(), KeyboardPageFragment.KeyClickListener 
         return sb.toString()
     }
 
-    private fun toLatexApprox(s: String): String {
-        return s
-            .replace("y''", "y^{\\prime\\prime}")
-            .replace("y'", "y^{\\prime}")
-            .replace("pi", "\\pi")
-            .replace("dy/dx", "\\frac{dy}{dx}")
-            .replace("*", "\\cdot ")
-            .replace("<=", "\\le ")
-            .replace(">=", "\\ge ")
-            .replace("!=", "\\ne ")
-            .replace("+/-", "\\pm ")
-            .replace(Regex("""sqrt\(([^()]*)\)""")) { m -> "\\sqrt{${m.groupValues[1]}}" }
+    private fun toLatexImproved(s: String): String {
+        var result = s
+        
+        // Convertir potencias simples: x^2 -> x^{2}, pero x^(2+3) mantenerlo
+        result = result.replace(Regex("([a-zA-Z0-9])\\^([0-9])")) { m ->
+            "${m.groupValues[1]}^{${m.groupValues[2]}}"
+        }
+        
+        // Convertir fracciones simples: (a)/(b) -> \frac{a}{b}
+        result = result.replace(Regex("\\(([^()]+)\\)/\\(([^()]+)\\)")) { m ->
+            "\\frac{${m.groupValues[1]}}{${m.groupValues[2]}}"
+        }
+        
+        // Derivadas
+        result = result.replace("y''", "y^{\\prime\\prime}")
+        result = result.replace("y'", "y^{\\prime}")
+        result = result.replace("dy/dx", "\\frac{dy}{dx}")
+        
+        // Constantes
+        result = result.replace("pi", "\\pi")
+        result = result.replace("e", "e")
+        
+        // Operadores
+        result = result.replace("*", "\\cdot ")
+        result = result.replace("<=", "\\le ")
+        result = result.replace(">=", "\\ge ")
+        result = result.replace("!=", "\\ne ")
+        result = result.replace("+/-", "\\pm ")
+        
+        // Funciones
+        result = result.replace(Regex("""sqrt\\(([^()]*)\\)""")) { m -> "\\sqrt{${m.groupValues[1]}}" }
+        
+        return result
     }
 }

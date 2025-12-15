@@ -32,11 +32,10 @@ class StepsActivity : AppCompatActivity() {
     }
 
     private fun baseMathJaxHtml(initialTex: String): String {
-        // Escape mínimo para meterlo dentro del HTML
-        val safe = initialTex
-            .replace("&", "&amp;")
-            .replace("<", "&lt;")
-            .replace(">", "&gt;")
+        // NO escapar el LaTeX, dejarlo como esta
+        val texContent = initialTex
+            .replace("\\n", "\n")  // Reemplazar \n literales por saltos reales
+            .trim()
 
         return """
             <!doctype html>
@@ -44,40 +43,64 @@ class StepsActivity : AppCompatActivity() {
             <head>
               <meta charset="utf-8"/>
               <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-
               <style>
-                html, body {
+                * {
                   margin: 0;
                   padding: 0;
-                  width: 100%;
-                  max-width: 100%;
-                  overflow-x: hidden;
-                  font-size: 18px;
-                }
-
-                /* Forzar que cualquier texto largo se parta hacia abajo */
-                #math, #math * {
-                  max-width: 100%;
                   box-sizing: border-box;
-                  overflow-wrap: break-word;   /* estándar moderno */ 
-                  word-wrap: break-word;       /* alias común */
-                  word-break: break-word;
                 }
-
-                body { padding: 12px; }
-                #math { padding-bottom: 24px; }
+                
+                body {
+                  font-family: system-ui, -apple-system, sans-serif;
+                  padding: 16px;
+                  font-size: 18px;
+                  line-height: 1.8;
+                  background: #FAFAFA;
+                  color: #212121;
+                }
+                
+                #math {
+                  max-width: 100%;
+                  overflow-x: auto;
+                  padding-bottom: 24px;
+                }
+                
+                /* Mejorar espaciado entre bloques LaTeX */
+                #math > * {
+                  margin-bottom: 12px;
+                }
+                
+                /* Estilo para titulos en negrita */
+                .MathJax .textbf {
+                  font-weight: bold;
+                  color: #1976D2;
+                }
               </style>
-
+              
               <script>
                 window.MathJax = {
-                  tex: { inlineMath: [['\\\(','\\\)']], displayMath: [['\\\[','\\\]']] },
-                  chtml: { scale: 1.0 }
+                  tex: {
+                    inlineMath: [['\\(', '\\)']],
+                    displayMath: [['\\[', '\\]']]
+                  },
+                  chtml: {
+                    scale: 1.0,
+                    matchFontHeight: false
+                  },
+                  startup: {
+                    ready: () => {
+                      MathJax.startup.defaultReady();
+                      MathJax.startup.promise.then(() => {
+                        console.log('MathJax loaded');
+                      });
+                    }
+                  }
                 };
               </script>
               <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
             </head>
             <body>
-              <div id="math">$safe</div>
+              <div id="math">${texContent}</div>
             </body>
             </html>
         """.trimIndent()

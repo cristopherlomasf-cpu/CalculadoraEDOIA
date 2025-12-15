@@ -42,7 +42,7 @@ class MainActivity : AppCompatActivity() {
     private var lastStepsLatex: String? = null
 
     private var isMathLiveReady = false
-    private var isResultWebViewReady = false  // NUEVO: flag para el WebView de resultados
+    private var isResultWebViewReady = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -92,7 +92,6 @@ class MainActivity : AppCompatActivity() {
         updateFieldLabel()
         updatePviButtonLabel()
         btnToggleSteps.isEnabled = false
-        // NO llamar a setResultLatex aquí, esperar a que el WebView esté listo
     }
 
     @SuppressLint("SetJavaScriptEnabled")
@@ -160,7 +159,7 @@ class MainActivity : AppCompatActivity() {
         
         // Configuración del teclado personalizado
         mf.setOptions({
-            virtualKeyboardMode: 'manual',
+            virtualKeyboardMode: 'onfocus',  // CAMBIADO: de 'manual' a 'onfocus'
             keypressSound: null,
             plonkSound: null,
             
@@ -217,11 +216,6 @@ class MainActivity : AppCompatActivity() {
             virtualKeyboards: 'edo'
         });
         
-        // Mostrar el teclado automáticamente
-        setTimeout(() => {
-            mf.executeCommand('showVirtualKeyboard');
-        }, 500);
-        
         // Notificar a Android cuando cambia el contenido
         mf.addEventListener('input', () => {
             const latex = mf.value;
@@ -251,7 +245,7 @@ class MainActivity : AppCompatActivity() {
             mf.executeCommand('deleteBackward');
         };
         
-        // Auto-focus
+        // Auto-focus para que aparezca el teclado
         setTimeout(() => mf.focus(), 300);
     </script>
 </body>
@@ -335,7 +329,6 @@ class MainActivity : AppCompatActivity() {
 
         setResultLatex("\\[\\text{Resolviendo...}\\]")
 
-        // PROMPT MEJORADO (MÁS CORTO Y DIRECTO)
         val prompt = buildString {
             appendLine("Resuelve esta EDO PASO A PASO con PRECISIÓN MATEMÁTICA. Devuelve solo LaTeX.")
             appendLine("")
@@ -364,12 +357,12 @@ class MainActivity : AppCompatActivity() {
                 val resp = withContext(Dispatchers.IO) {
                     api.chat(
                         PplxRequest(
-                            model = "sonar-pro",  // BALANCE: Más preciso que sonar, más rápido que sonar-reasoning
+                            model = "sonar-pro",
                             messages = listOf(
                                 PplxMessage("system", "Eres un experto matemático especializado en ecuaciones diferenciales. Resuelve con precisión. Solo LaTeX, sin markdown."),
                                 PplxMessage("user", prompt)
                             ),
-                            temperature = 0.2  // Reducido para mayor precisión
+                            temperature = 0.2
                         )
                     )
                 }
@@ -430,7 +423,6 @@ class MainActivity : AppCompatActivity() {
                 super.onPageFinished(view, url)
                 isResultWebViewReady = true
                 Log.d("ResultWebView", "Ready")
-                // Establecer mensaje inicial DESPUÉS de que esté listo
                 setResultLatex("\\[\\text{Presiona Resolver.}\\]")
             }
         }
@@ -467,7 +459,6 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun setResultLatex(latex: String) {
-        // IMPORTANTE: Solo ejecutar si el WebView está listo
         if (!isResultWebViewReady) {
             Log.w("ResultWebView", "Not ready yet, skipping setResultLatex")
             return

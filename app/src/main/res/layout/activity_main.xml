@@ -17,10 +17,10 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content">
 
-            <!-- EDITOR MATHLIVE - 350dp para dar espacio al teclado -->
+            <!-- EDITOR MATHLIVE - Máximo espacio 450dp -->
             <androidx.cardview.widget.CardView
                 android:layout_width="match_parent"
-                android:layout_height="350dp"
+                android:layout_height="450dp"
                 android:layout_marginBottom="8dp"
                 app:cardCornerRadius="12dp"
                 app:cardElevation="4dp"
@@ -50,42 +50,6 @@
                         android:layout_height="0dp"
                         android:layout_weight="1"
                         android:background="#FAFAFA"/>
-
-                </LinearLayout>
-
-            </androidx.cardview.widget.CardView>
-
-            <!-- TECLADO PERSONALIZADO CON TABS -->
-            <androidx.cardview.widget.CardView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="8dp"
-                app:cardCornerRadius="12dp"
-                app:cardElevation="2dp"
-                app:cardBackgroundColor="#FFFFFF">
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical">
-
-                    <!-- Tabs del teclado -->
-                    <com.google.android.material.tabs.TabLayout
-                        android:id="@+id/tabKeyboard"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        app:tabMode="fixed"
-                        app:tabIndicatorFullWidth="false"
-                        app:tabIndicatorColor="#1976D2"
-                        app:tabTextColor="#666666"
-                        app:tabSelectedTextColor="#1976D2"/>
-
-                    <!-- ViewPager del teclado personalizado -->
-                    <androidx.viewpager2.widget.ViewPager2
-                        android:id="@+id/vpKeyboard"
-                        android:layout_width="match_parent"
-                        android:layout_height="220dp"
-                        android:padding="4dp"/>
 
                 </LinearLayout>
 
@@ -171,7 +135,7 @@
             <!-- RESULTADO -->
             <androidx.cardview.widget.CardView
                 android:layout_width="match_parent"
-                android:layout_height="200dp"
+                android:layout_height="250dp"
                 app:cardCornerRadius="12dp"
                 app:cardElevation="2dp"
                 app:cardBackgroundColor="#FFFFFF">

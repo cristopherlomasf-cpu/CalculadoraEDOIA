@@ -3,6 +3,7 @@ import com.android.build.gradle.internal.cxx.configure.gradleLocalProperties
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
+    id("com.google.devtools.ksp") version "2.1.0-1.0.29"
 }
 
 android {
@@ -16,6 +17,12 @@ android {
     defaultConfig {
         val pplxKey = gradleLocalProperties(rootDir, providers).getProperty("PPLX_API_KEY") ?: ""
         buildConfigField("String", "PPLX_API_KEY", "\"$pplxKey\"")
+        
+        val mathpixKey = gradleLocalProperties(rootDir, providers).getProperty("MATHPIX_APP_ID") ?: ""
+        val mathpixSecret = gradleLocalProperties(rootDir, providers).getProperty("MATHPIX_APP_KEY") ?: ""
+        buildConfigField("String", "MATHPIX_APP_ID", "\"$mathpixKey\"")
+        buildConfigField("String", "MATHPIX_APP_KEY", "\"$mathpixSecret\"")
+        
         applicationId = "com.example.calculadoraedoia"
         minSdk = 26
         targetSdk = 36
@@ -60,6 +67,11 @@ dependencies {
     implementation("com.squareup.retrofit2:converter-gson:2.11.0")
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1")
+    
+    // Room Database
+    implementation("androidx.room:room-runtime:2.6.1")
+    implementation("androidx.room:room-ktx:2.6.1")
+    ksp("androidx.room:room-compiler:2.6.1")
     
     // ML Kit Text Recognition V2
     implementation("com.google.android.gms:play-services-mlkit-text-recognition:19.0.1")

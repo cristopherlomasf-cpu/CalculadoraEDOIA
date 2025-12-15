@@ -115,10 +115,16 @@ class HistoryAdapter(
             setLatexToWebView(wvEquation, eqLatex)
 
             // PVI
-            val hasPvi = !history.x0.isNullOrBlank() || !history.y0.isNullOrBlank()
+            val hasPvi = !history.x0.isNullOrBlank() || !history.y0.isNullOrBlank() || !history.yPrime0.isNullOrBlank()
             if (hasPvi) {
                 tvPvi.visibility = View.VISIBLE
-                tvPvi.text = "PVI: x₀=${history.x0 ?: ""}, y₀=${history.y0 ?: ""}"
+                val pviText = buildString {
+                    append("PVI: x₀=${history.x0 ?: ""}, y₀=${history.y0 ?: ""}")
+                    if (!history.yPrime0.isNullOrBlank()) {
+                        append(", y'₀=${history.yPrime0}")
+                    }
+                }
+                tvPvi.text = pviText
             } else {
                 tvPvi.visibility = View.GONE
             }
@@ -170,7 +176,7 @@ class HistoryAdapter(
             for (ch in s) {
                 when (ch) {
                     '\\' -> sb.append("\\\\")
-                    '"' -> sb.append("\\")
+                    '"' -> sb.append("\\\"")
                     '\n' -> sb.append("\\n")
                     '\r' -> sb.append("\\r")
                     '\t' -> sb.append("\\t")

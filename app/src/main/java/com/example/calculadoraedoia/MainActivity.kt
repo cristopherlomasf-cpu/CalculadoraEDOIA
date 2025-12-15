@@ -34,13 +34,9 @@ class MainActivity : AppCompatActivity() {
     private lateinit var btnSolve: Button
     private lateinit var btnToggleSteps: Button
 
-    // 0=EDO, 1=x0, 2=y0
     private var activeField = 0
-
-    // Toggle pasos
     private var lastSolutionLatex: String? = null
     private var lastStepsLatex: String? = null
-
     private var isMathLiveReady = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -50,11 +46,9 @@ class MainActivity : AppCompatActivity() {
         etEquation = findViewById(R.id.etEquation)
         etX0 = findViewById(R.id.etX0)
         etY0 = findViewById(R.id.etY0)
-
         tvFieldLabel = findViewById(R.id.tvFieldLabel)
         wvMathLive = findViewById(R.id.wvMathLive)
         wvResult = findViewById(R.id.wvLatexResult)
-
         btnPvi = findViewById(R.id.btnPvi)
         btnSolve = findViewById(R.id.btnSolve)
         btnToggleSteps = findViewById(R.id.btnToggleSteps)
@@ -87,7 +81,6 @@ class MainActivity : AppCompatActivity() {
             startActivity(i)
         }
 
-        // Estado inicial
         updateFieldLabel()
         updatePviButtonLabel()
         btnToggleSteps.isEnabled = false
@@ -157,13 +150,10 @@ class MainActivity : AppCompatActivity() {
         
         const mf = document.getElementById('mathfield');
         
-        // Configuración del teclado personalizado
         mf.setOptions({
             virtualKeyboardMode: 'manual',
             keypressSound: null,
             plonkSound: null,
-            
-            // Definir capa personalizada
             customVirtualKeyboardLayers: {
                 'edo': {
                     styles: '',
@@ -211,17 +201,13 @@ class MainActivity : AppCompatActivity() {
                     ]
                 }
             },
-            
-            // Usar SOLO nuestro teclado personalizado
             virtualKeyboards: 'edo'
         });
         
-        // Mostrar el teclado automáticamente
         setTimeout(() => {
             mf.executeCommand('showVirtualKeyboard');
         }, 500);
         
-        // Notificar a Android cuando cambia el contenido
         mf.addEventListener('input', () => {
             const latex = mf.value;
             if (window.Android) {
@@ -229,7 +215,6 @@ class MainActivity : AppCompatActivity() {
             }
         });
         
-        // Exponer funciones para Android
         window.setLatex = function(latex) {
             mf.value = latex;
         };
@@ -250,7 +235,6 @@ class MainActivity : AppCompatActivity() {
             mf.executeCommand('deleteBackward');
         };
         
-        // Auto-focus
         setTimeout(() => mf.focus(), 300);
     </script>
 </body>
@@ -299,19 +283,14 @@ class MainActivity : AppCompatActivity() {
 
     private fun focusMathLive() {
         if (!isMathLiveReady) return
-        
-        // Cargar el valor del campo actual en MathLive
         val currentValue = when (activeField) {
             1 -> etX0.text.toString()
             2 -> etY0.text.toString()
             else -> etEquation.text.toString()
         }
-        
         val jsCmd = "setLatex(${jsonString(currentValue)});"
         wvMathLive.evaluateJavascript(jsCmd, null)
     }
-
-    // -------- Resolver --------
 
     private fun onSolveClicked() {
         val equation = etEquation.text.toString().trim()
@@ -327,42 +306,26 @@ class MainActivity : AppCompatActivity() {
         }
 
         val hasPvi = x0.isNotBlank() || y0.isNotBlank()
-
         btnToggleSteps.isEnabled = false
         lastSolutionLatex = null
         lastStepsLatex = null
-
         setResultLatex("\\[\\text{Resolviendo...}\\]")
 
         val prompt = buildString {
-            appendLine("Resuelve esta EDO y devuelve SOLO LaTeX para MathJax. NO uses bloques de codigo ni markdown.")
+            appendLine("Resuelve esta EDO. Solo LaTeX limpio.")
             appendLine("")
-            appendLine("FORMATO ESTRICTO:")
-            appendLine("")
-            appendLine("Parte 1 (ANTES del delimitador):")
+            appendLine("FORMATO:")
+            appendLine("Antes de <<<PASOS>>>:")
             appendLine("\\[\\textbf{SOLUCION}\\]")
-            appendLine("\\[\\textbf{TIPO:} \\text{descripcion del tipo}\\]")
-            appendLine("\\[y = \\text{resultado final}\\]")
+            appendLine("\\[\\textbf{TIPO:} \\text{tipo}\\]")
+            appendLine("\\[y = \\text{resultado}\\]")
             appendLine("")
-            appendLine("Delimitador obligatorio en una linea sola:")
             appendLine("<<<PASOS>>>")
             appendLine("")
-            appendLine("Parte 2 (DESPUES del delimitador):")
+            appendLine("Despues:")
             appendLine("\\[\\textbf{PASOS}\\]")
-            appendLine("\\[\\textbf{METODO:} \\text{nombre del metodo}\\]")
-            appendLine("\\[\\text{Paso 1: Descripcion corta}\\]")
-            appendLine("\\[ecuaciones\\]")
-            appendLine("\\[\\text{Paso 2: Descripcion corta}\\]")
-            appendLine("\\[ecuaciones\\]")
-            appendLine("(continua hasta terminar)")
-            appendLine("")
-            appendLine("REGLAS IMPORTANTES:")
-            appendLine("1. NO uses bloques ```latex```")
-            appendLine("2. NO uses barras invertidas para espaciar. Usa espacios normales")
-            appendLine("3. TODA la solucion debe estar ANTES de <<<PASOS>>>")
-            appendLine("4. TODOS los pasos deben estar DESPUES de <<<PASOS>>>")
-            appendLine("5. Cada paso debe tener descripcion y ecuacion en lineas separadas")
-            appendLine("6. Verifica tus calculos y se PRECISO en los resultados")
+            appendLine("\\[\\textbf{METODO:} \\text{metodo}\\]")
+            appendLine("(pasos con ecuaciones)")
             appendLine("")
             appendLine("EDO: $equation")
             if (hasPvi) appendLine("PVI: x0=$x0, y0=$y0")
@@ -373,12 +336,12 @@ class MainActivity : AppCompatActivity() {
                 val resp = withContext(Dispatchers.IO) {
                     api.chat(
                         PplxRequest(
-                            model = "sonar-reasoning",
+                            model = "sonar",
                             messages = listOf(
-                                PplxMessage("system", "Eres un experto matematico. Devuelve unicamente LaTeX valido para MathJax. Sin bloques de codigo ni markdown. Verifica tus calculos cuidadosamente."),
+                                PplxMessage("system", "Experto EDO. Solo LaTeX."),
                                 PplxMessage("user", prompt)
                             ),
-                            temperature = 0.1
+                            temperature = 0.2
                         )
                     )
                 }
@@ -393,7 +356,6 @@ class MainActivity : AppCompatActivity() {
                 val (sol, steps) = splitSolutionSteps(cleaned)
                 lastSolutionLatex = sol
                 lastStepsLatex = steps
-
                 btnToggleSteps.isEnabled = true
                 setResultLatex(sol)
 
@@ -403,7 +365,7 @@ class MainActivity : AppCompatActivity() {
                 Log.e("NET", "HTTP error", e)
             } catch (e: IOException) {
                 btnToggleSteps.isEnabled = false
-                setResultLatex("\\[\\text{Error de red (timeout).}\\]")
+                setResultLatex("\\[\\text{Error de red}\\]")
                 Log.e("NET", "Network error", e)
             } catch (e: Exception) {
                 btnToggleSteps.isEnabled = false
@@ -416,10 +378,8 @@ class MainActivity : AppCompatActivity() {
     private fun splitSolutionSteps(allLatex: String): Pair<String, String> {
         val delim = "<<<PASOS>>>"
         val parts = allLatex.split(delim, limit = 2)
-        
         val solution = if (parts.isNotEmpty()) parts[0].trim() else ""
         val steps = if (parts.size > 1) parts[1].trim() else ""
-
         val safeSolution = solution.ifBlank {
             "\\[\\textbf{SOLUCION}\\]\\n\\[\\textbf{TIPO:} \\text{(no disponible)}\\]"
         }
@@ -428,8 +388,6 @@ class MainActivity : AppCompatActivity() {
         }
         return Pair(safeSolution, safeSteps)
     }
-
-    // -------- WebView result --------
 
     private fun setupWebView(wv: WebView) {
         wv.settings.javaScriptEnabled = true

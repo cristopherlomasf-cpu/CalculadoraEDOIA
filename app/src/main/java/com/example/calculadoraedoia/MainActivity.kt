@@ -126,32 +126,26 @@ class MainActivity : AppCompatActivity() {
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { 
             font-family: system-ui;
-            padding: 8px;
+            padding: 12px;
             background: #FAFAFA;
             overflow: hidden;
             height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
         #mathfield {
-            font-size: 36px;
-            padding: 20px;
+            font-size: 32px;
+            padding: 16px;
             border: 2px solid #E0E0E0;
             border-radius: 8px;
             background: white;
-            min-height: 120px;
             width: 100%;
+            min-height: 80px;
         }
         #mathfield:focus {
             border-color: #1976D2;
             outline: none;
-        }
-        
-        /* Botones más grandes y espaciados */
-        .ML__keyboard {
-            --keyboard-zindex: 10000;
-            --keycap-height: 4em !important;
-            --keycap-font-size: 24px !important;
-            --keycap-small-font-size: 18px !important;
-            --keycap-gap: 6px !important;
         }
     </style>
 </head>
@@ -164,39 +158,11 @@ class MainActivity : AppCompatActivity() {
         
         const mf = document.getElementById('mathfield');
         
-        // Configurar teclado virtual - SOLO LO ESENCIAL
+        // SIN TECLADO VIRTUAL - solo editor visual
         mf.setOptions({
-            virtualKeyboardMode: 'onfocus',
-            
-            // IMPORTANTE: EDO primero con MENOS botones
-            virtualKeyboards: 'edo numeric functions',
-            
+            virtualKeyboardMode: 'off',
             keypressSound: null,
             plonkSound: null,
-            
-            customVirtualKeyboardLayers: {
-                'edo': {
-                    label: 'EDO',
-                    tooltip: 'Ecuaciones Diferenciales',
-                    rows: [
-                        // Fila 1: Solo derivadas esenciales (3 botones)
-                        [
-                            { latex: "y'", label: "<span style='font-size:32px; font-weight:bold'>y'</span>", class: 'action', width: 1.5 },
-                            { latex: "y''", label: "<span style='font-size:32px; font-weight:bold'>y''</span>", class: 'action', width: 1.5 },
-                            { latex: '\\\\frac{dy}{dx}', label: "<span style='font-size:22px'>dy/dx</span>", width: 2 },
-                        ],
-                        // Fila 2: Variables y exponencial (3 botones)
-                        [
-                            { latex: 'x', label: "<span style='font-size:36px; font-weight:bold'>x</span>", width: 1.5 },
-                            { latex: 'y', label: "<span style='font-size:36px; font-weight:bold'>y</span>", width: 1.5 },
-                            { latex: 'e^{#?}', label: "<span style='font-size:28px'>eˣ</span>", width: 2 },
-                        ],
-                    ]
-                }
-            },
-            
-            // Orden: EDO es el primero
-            virtualKeyboardLayout: 'edo numeric functions'
         });
         
         // Notificar a Android cuando cambia el contenido
@@ -216,11 +182,19 @@ class MainActivity : AppCompatActivity() {
             return mf.value;
         };
         
+        window.insertLatex = function(latex) {
+            mf.executeCommand(['insert', latex]);
+        };
+        
         window.clearMathfield = function() {
             mf.value = '';
         };
         
-        // Auto-focus para mostrar teclado
+        window.deleteBackward = function() {
+            mf.executeCommand('deleteBackward');
+        };
+        
+        // Auto-focus
         setTimeout(() => mf.focus(), 300);
     </script>
 </body>

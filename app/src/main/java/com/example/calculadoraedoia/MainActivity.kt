@@ -41,6 +41,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var etEquation: EditText
     private lateinit var etX0: EditText
     private lateinit var etY0: EditText
+    private lateinit var etYPrime0: EditText
     private lateinit var tvFieldLabel: TextView
     private lateinit var wvMathLive: WebView
     private lateinit var wvResult: WebView
@@ -73,10 +74,11 @@ class MainActivity : AppCompatActivity() {
             val equation = result.data?.getStringExtra(HistoryActivity.EXTRA_EQUATION) ?: ""
             val x0 = result.data?.getStringExtra(HistoryActivity.EXTRA_X0) ?: ""
             val y0 = result.data?.getStringExtra(HistoryActivity.EXTRA_Y0) ?: ""
+            val yPrime0 = result.data?.getStringExtra(HistoryActivity.EXTRA_YPRIME0) ?: ""
             val solution = result.data?.getStringExtra(HistoryActivity.EXTRA_SOLUTION) ?: ""
             val steps = result.data?.getStringExtra(HistoryActivity.EXTRA_STEPS) ?: ""
 
-            loadFromHistory(equation, x0, y0, solution, steps)
+            loadFromHistory(equation, x0, y0, yPrime0, solution, steps)
         }
     }
 
@@ -90,6 +92,7 @@ class MainActivity : AppCompatActivity() {
         etEquation = findViewById(R.id.etEquation)
         etX0 = findViewById(R.id.etX0)
         etY0 = findViewById(R.id.etY0)
+        etYPrime0 = findViewById(R.id.etYPrime0)
         tvFieldLabel = findViewById(R.id.tvFieldLabel)
         wvMathLive = findViewById(R.id.wvMathLive)
         wvResult = findViewById(R.id.wvLatexResult)
@@ -205,14 +208,14 @@ class MainActivity : AppCompatActivity() {
             AppCompatDelegate.MODE_NIGHT_YES
         }
         AppCompatDelegate.setDefaultNightMode(newMode)
-        // Recrear activity para aplicar cambios
         recreate()
     }
 
-    private fun loadFromHistory(equation: String, x0: String, y0: String, solution: String, steps: String) {
+    private fun loadFromHistory(equation: String, x0: String, y0: String, yPrime0: String, solution: String, steps: String) {
         etEquation.setText(equation)
         etX0.setText(x0)
         etY0.setText(y0)
+        etYPrime0.setText(yPrime0)
 
         if (isMathLiveReady) {
             val jsCmd = "setLatex(${jsonString(equation)});"
@@ -220,7 +223,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         // Mostrar PVI si hay valores
-        if (x0.isNotBlank() || y0.isNotBlank()) {
+        if (x0.isNotBlank() || y0.isNotBlank() || yPrime0.isNotBlank()) {
             isPviVisible = true
             cardPvi.visibility = View.VISIBLE
             btnPvi.text = "Ocultar PVI"
@@ -232,13 +235,14 @@ class MainActivity : AppCompatActivity() {
         setResultLatex(solution)
     }
 
-    private fun saveToHistory(equation: String, x0: String?, y0: String?, solution: String, steps: String) {
+    private fun saveToHistory(equation: String, x0: String?, y0: String?, yPrime0: String?, solution: String, steps: String) {
         lifecycleScope.launch {
             try {
                 val history = EquationHistory(
                     equation = equation,
                     x0 = x0,
                     y0 = y0,
+                    yPrime0 = yPrime0,
                     solution = solution,
                     steps = steps
                 )
@@ -406,6 +410,7 @@ class MainActivity : AppCompatActivity() {
         val equation = etEquation.text.toString().trim()
         val x0 = etX0.text.toString().trim()
         val y0 = etY0.text.toString().trim()
+        val yPrime0 = etYPrime0.text.toString().trim()
 
         if (equation.isBlank()) {
             lastSolutionLatex = null
@@ -415,7 +420,7 @@ class MainActivity : AppCompatActivity() {
             return
         }
 
-        val hasPvi = x0.isNotBlank() || y0.isNotBlank()
+        val hasPvi = x0.isNotBlank() || y0.isNotBlank() || yPrime0.isNotBlank()
         btnToggleSteps.isEnabled = false
         lastSolutionLatex = null
         lastStepsLatex = null
@@ -440,7 +445,12 @@ class MainActivity : AppCompatActivity() {
             appendLine("IMPORTANTE: Verifica calculos. NO inventes soluciones.")
             appendLine("")
             appendLine("EDO: $equation")
-            if (hasPvi) appendLine("PVI: x0=$x0, y0=$y0")
+            if (hasPvi) {
+                appendLine("PVI: x0=$x0, y0=$y0")
+                if (yPrime0.isNotBlank()) {
+                    appendLine("     y'0=$yPrime0")
+                }
+            }
         }
 
         CoroutineScope(Dispatchers.Main).launch {
@@ -475,6 +485,7 @@ class MainActivity : AppCompatActivity() {
                     equation = equation,
                     x0 = x0.ifBlank { null },
                     y0 = y0.ifBlank { null },
+                    yPrime0 = yPrime0.ifBlank { null },
                     solution = sol,
                     steps = steps
                 )
